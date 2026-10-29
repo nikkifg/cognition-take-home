@@ -10,14 +10,14 @@ import { ForbiddenError, SelfApprovalError } from "@/platform/errors";
 import type { Actor } from "@/platform/roles";
 import { auditFor, makeFlag, makeUser } from "./fixtures";
 
-let engineer: Actor, engineer2: Actor, admin: Actor, support: Actor;
+let engineer: Actor, engineer2: Actor, admin: Actor, finance: Actor;
 
 before(async () => {
-  [engineer, engineer2, admin, support] = await Promise.all([
+  [engineer, engineer2, admin, finance] = await Promise.all([
     makeUser("engineer"),
     makeUser("engineer"),
     makeUser("admin"),
-    makeUser("support_agent"),
+    makeUser("finance_admin"),
   ]);
 });
 
@@ -76,9 +76,9 @@ describe("Flags: dev/staging changes apply directly", () => {
 });
 
 describe("Flags: RBAC", () => {
-  for (const role of ["admin", "support"] as const) {
+  for (const role of ["admin", "finance"] as const) {
     it(`${role} can't change dev or request prod (403), nothing changes and the denial is audited`, async () => {
-      const actor = role === "admin" ? admin : support;
+      const actor = role === "admin" ? admin : finance;
       const { flag } = await flagWith("dev");
 
       await assert.rejects(
@@ -182,9 +182,14 @@ describe("Flags: prod changes need approval", () => {
 
   it("credits the request being approved even if another approved request is unapplied", async () => {
     const { flag, request } = await requested();
-    const { id: _id, createdAt: _c, ...rest } = await db.approvalRequest.findUniqueOrThrow({ where: { id: request.id } });
+    const { app, action, payload, summary, entityType, entityId, approverPermission } = request;
     const stray = await db.approvalRequest.create({
-      data: { ...rest, requestedById: engineer2.id, status: "APPROVED", resolvedAt: new Date(Date.now() + 60_000) },
+      data: {
+        app, action, payload, summary, entityType, entityId, approverPermission,
+        requestedById: engineer2.id,
+        status: "APPROVED",
+        resolvedAt: new Date(Date.now() + 60_000),
+      },
     });
 
     await runAction(decideApproval, engineer2, { requestId: request.id, decision: "APPROVE" });
