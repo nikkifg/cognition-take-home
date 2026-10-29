@@ -2,7 +2,7 @@ import { signOut } from "@/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SidebarLink } from "@/components/sidebar-link";
-import { can } from "@/platform/rbac";
+import { auditScope, can } from "@/platform/rbac";
 import { listApps } from "@/platform/registry";
 import { ROLE_LABELS } from "@/platform/roles";
 import { getCurrentUser } from "@/platform/session";
@@ -35,7 +35,7 @@ export async function AppSidebar() {
           </span>
         ),
       )}
-      {can(user, "audit.view") && (
+      {auditScope(user).length > 0 && (
         <>
           <p className="mt-4 px-3 pb-1 text-xs font-medium uppercase tracking-wide text-sidebar-foreground/60">
             Admin

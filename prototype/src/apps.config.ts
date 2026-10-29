@@ -1,5 +1,6 @@
 // App registry. New apps register here: navigation, permissions (and which
 // roles get them), sensitive fields and approval handlers. See AGENTS.md.
+import { applySecondApproval, returnAfterSecondReviewRejected } from "@/app/kyc/_lib/second-review";
 import type { AppDefinition } from "@/platform/types";
 
 const apps: AppDefinition[] = [
@@ -8,7 +9,7 @@ const apps: AppDefinition[] = [
     name: "KYC review queue",
     description: "Claim and decide KYC cases; four-eyes on high-risk applicants.",
     href: "/kyc",
-    status: "planned",
+    status: "live",
     viewPermission: "kyc.view",
     permissions: {
       "kyc.view": {
@@ -18,6 +19,14 @@ const apps: AppDefinition[] = [
       "kyc.case.claim": {
         description: "Claim a case",
         roles: ["compliance_analyst", "compliance_senior_reviewer"],
+      },
+      "kyc.audit.view": {
+        description: "View KYC audit events",
+        roles: ["compliance_senior_reviewer"],
+      },
+      "kyc.escalation.claim": {
+        description: "Claim an escalated case",
+        roles: ["compliance_senior_reviewer"],
       },
       "kyc.case.decide": {
         description: "Approve, reject or escalate a case",
@@ -42,6 +51,8 @@ const apps: AppDefinition[] = [
         mask: (v) => `•••-••-${v.slice(-4)}`,
       },
     },
+    approvalHandlers: { "kyc.case.approve_high_risk": applySecondApproval },
+    rejectionHandlers: { "kyc.case.approve_high_risk": returnAfterSecondReviewRejected },
   },
   {
     id: "refunds",

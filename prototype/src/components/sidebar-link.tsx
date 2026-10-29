@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import { cn } from "cn";
 
 export function SidebarLink({ href, children }: { href: string; children: React.ReactNode }) {
-  const active = usePathname() === href;
+  const pathname = usePathname();
+  const active = pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
   return (
     <Link
       href={href}
