@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Prisma } from "@/generated/prisma/client";
-import { REASON_CODES, TXN_SETTLED, formatCents } from "@/apps/refunds/policy";
+import { REASON_CODES, TXN_REFUNDED, TXN_SETTLED, formatCents } from "@/apps/refunds/policy";
 import { Masked } from "@/platform/masked";
 import { can } from "@/platform/rbac";
 import { requireUser } from "@/platform/session";
@@ -97,6 +97,8 @@ async function Transactions({ searchParams }: { searchParams: PageProps<"/refund
                           <span className="text-xs text-destructive">{refund.failureReason}</span>
                         )}
                       </div>
+                    ) : t.status === TXN_REFUNDED ? (
+                      <span className="text-muted-foreground">Refunded (no request on record)</span>
                     ) : (
                       <span className="text-muted-foreground">Not refunded</span>
                     )}
