@@ -1,6 +1,8 @@
 // App registry. New apps register here: navigation, permissions (and which
 // roles get them), sensitive fields and approval handlers. See AGENTS.md.
 import type { AppDefinition } from "@/platform/types";
+import { approveRefund, rejectRefund } from "@/apps/refunds/approval-handlers";
+import { EXECUTE_APPROVAL_ACTION } from "@/apps/refunds/policy";
 
 const apps: AppDefinition[] = [
   {
@@ -46,9 +48,9 @@ const apps: AppDefinition[] = [
   {
     id: "refunds",
     name: "Refunds dashboard",
-    description: "Request and approve refunds with per-role limits.",
+    description: "Search transactions and refund them; $100+ needs a finance approver.",
     href: "/refunds",
-    status: "planned",
+    status: "live",
     viewPermission: "refunds.view",
     permissions: {
       "refunds.view": {
@@ -56,14 +58,34 @@ const apps: AppDefinition[] = [
         roles: ["support_agent", "finance_approver", "admin"],
       },
       "refunds.request": {
-        description: "Request a refund",
+        description: "Request a full refund (under $100 executes immediately)",
+        roles: ["support_agent", "finance_approver"],
+      },
+      "refunds.execute": {
+        description: "Send an authorized refund to the payment processor (incl. retries)",
         roles: ["support_agent", "finance_approver"],
       },
       "refunds.approve": {
-        description: "Approve refunds over the requester's limit",
+        description: "Approve or reject refunds of $100 and above",
         roles: ["finance_approver"],
       },
+      "refunds.customer_email.reveal": {
+        description: "Reveal a customer's full email address",
+        roles: ["support_agent", "finance_approver"],
+      },
     },
+    sensitiveFields: {
+      "transaction.customerEmail": {
+        label: "Customer email",
+        permission: "refunds.customer_email.reveal",
+        read: async (client, id) =>
+          (await client.transaction.findUnique({ where: { id }, select: { customerEmail: true } }))
+            ?.customerEmail ?? null,
+        mask: (v) => `${v.slice(0, 1)}•••${v.slice(v.indexOf("@"))}`,
+      },
+    },
+    approvalHandlers: { [EXECUTE_APPROVAL_ACTION]: approveRefund },
+    rejectionHandlers: { [EXECUTE_APPROVAL_ACTION]: rejectRefund },
   },
   {
     id: "flags",
