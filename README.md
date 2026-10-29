@@ -21,9 +21,9 @@ The app lives in [`prototype/`](./prototype).
 cd prototype
 nvm use                      # Node 22 (see .nvmrc)
 cp .env.example .env
-npm install                  # also runs `prisma generate`
+npm install
 npm run db:migrate           # creates ./dev.db and applies migrations
-npm run dev                  # http://localhost:3000
+npm run dev                  # runs `prisma generate`, then http://localhost:3000
 ```
 
 Checks: `npm run lint`, `npm run typecheck`, `npm run build`.
