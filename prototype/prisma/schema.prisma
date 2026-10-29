@@ -31,13 +31,14 @@ model User {
   role        Role
   createdAt   DateTime @default(now())
 
-  claimedCases      KycCase[]          @relation("CaseClaimedBy")
-  decidedCases      KycCase[]          @relation("CaseDecidedBy")
-  refundRequests    RefundRequest[]    @relation("RefundRequestedBy")
-  approvalRequests  ApprovalRequest[]  @relation("ApprovalRequestedBy")
-  approvalDecisions ApprovalDecision[]
-  flagValueUpdates  FlagValue[]
-  flagChanges       FlagChange[]
+  claimedCases       KycCase[]           @relation("CaseClaimedBy")
+  decidedCases       KycCase[]           @relation("CaseDecidedBy")
+  refundRequests     RefundRequest[]     @relation("RefundRequestedBy")
+  approvalRequests   ApprovalRequest[]   @relation("ApprovalRequestedBy")
+  approvalDecisions  ApprovalDecision[]
+  flagValueUpdates   FlagValue[]
+  flagChanges        FlagChange[]
+  bankAccountChanges BankAccountChange[] @relation("BankAccountChangeRequestedBy")
 }
 
 /// Append-only. Insert via platform/audit.ts only; UPDATE/DELETE are blocked by
@@ -273,4 +274,53 @@ model FlagChange {
   approvalRequestId String?
   approvalRequest   ApprovalRequest? @relation(fields: [approvalRequestId], references: [id])
   createdAt         DateTime         @default(now())
+}
+
+// ───────────────────────────── Payouts ──────────────────────────────
+
+/// A vendor we pay out to. Synthetic only.
+model Payee {
+  id            String   @id @default(cuid())
+  reference     String   @unique
+  name          String
+  bankName      String
+  routingNumber String
+  accountNumber String // sensitive: render with <Masked>
+  /// ACTIVE or CHANGE_PENDING. Claimed atomically when a change is requested
+  /// so a payee has at most one pending bank-account change.
+  status        String   @default("ACTIVE")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  bankAccountChanges BankAccountChange[]
+}
+
+/// PENDING_APPROVAL -> APPROVED | REJECTED.
+enum BankAccountChangeStatus {
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+}
+
+/// A requested change to a payee's payout bank account. Applied to the Payee
+/// only when a second finance admin approves it.
+model BankAccountChange {
+  id               String                  @id @default(cuid())
+  payeeId          String
+  payee            Payee                   @relation(fields: [payeeId], references: [id])
+  oldBankName      String
+  oldRoutingNumber String
+  oldAccountNumber String // sensitive: render with <Masked>
+  newBankName      String
+  newRoutingNumber String
+  newAccountNumber String // sensitive: render with <Masked>
+  reason           String
+  status           BankAccountChangeStatus @default(PENDING_APPROVAL)
+  requestedById    String
+  requestedBy      User                    @relation("BankAccountChangeRequestedBy", fields: [requestedById], references: [id])
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+
+  @@index([status])
+  @@index([payeeId])
 }

@@ -10,14 +10,14 @@ import { ForbiddenError, SelfApprovalError } from "@/platform/errors";
 import type { Actor } from "@/platform/roles";
 import { auditFor, makeFlag, makeUser } from "./fixtures";
 
-let engineer: Actor, engineer2: Actor, admin: Actor, support: Actor;
+let engineer: Actor, engineer2: Actor, admin: Actor, finance: Actor;
 
 before(async () => {
-  [engineer, engineer2, admin, support] = await Promise.all([
+  [engineer, engineer2, admin, finance] = await Promise.all([
     makeUser("engineer"),
     makeUser("engineer"),
     makeUser("admin"),
-    makeUser("support_agent"),
+    makeUser("finance_admin"),
   ]);
 });
 
@@ -76,9 +76,9 @@ describe("Flags: dev/staging changes apply directly", () => {
 });
 
 describe("Flags: RBAC", () => {
-  for (const role of ["admin", "support"] as const) {
+  for (const role of ["admin", "finance"] as const) {
     it(`${role} can't change dev or request prod (403), nothing changes and the denial is audited`, async () => {
-      const actor = role === "admin" ? admin : support;
+      const actor = role === "admin" ? admin : finance;
       const { flag } = await flagWith("dev");
 
       await assert.rejects(

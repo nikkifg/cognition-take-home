@@ -6,6 +6,8 @@ import { PROD_CHANGE } from "@/apps/flags/policy";
 import type { AppDefinition } from "@/platform/types";
 import { approveRefund, rejectRefund } from "@/apps/refunds/approval-handlers";
 import { EXECUTE_APPROVAL_ACTION } from "@/apps/refunds/policy";
+import { applyBankChange, rejectBankChange } from "@/apps/payouts/approval-handlers";
+import { BANK_CHANGE_APPROVAL } from "@/apps/payouts/policy";
 
 const apps: AppDefinition[] = [
   {
@@ -123,6 +125,56 @@ const apps: AppDefinition[] = [
       },
     },
     approvalHandlers: { [PROD_CHANGE]: applyProdChange },
+  },
+  {
+    id: "payouts",
+    name: "Payout bank accounts",
+    description: "Change a payee's payout bank account; a second finance admin approves each change.",
+    href: "/payouts",
+    status: "live",
+    viewPermission: "payouts.view",
+    permissions: {
+      "payouts.view": {
+        description: "View payees and bank account changes",
+        roles: ["finance_admin", "admin"],
+      },
+      "payouts.bank_change.request": {
+        description: "Request a payout bank account change (another finance admin must approve it)",
+        roles: ["finance_admin"],
+      },
+      "payouts.bank_change.approve": {
+        description: "Approve or reject payout bank account changes",
+        roles: ["finance_admin"],
+      },
+      "payouts.account_number.reveal": {
+        description: "Reveal a full payout account number",
+        roles: ["finance_admin"],
+      },
+    },
+    sensitiveFields: {
+      "payee.accountNumber": {
+        label: "Account number",
+        permission: "payouts.account_number.reveal",
+        read: async (client, id) =>
+          (await client.payee.findUnique({ where: { id }, select: { accountNumber: true } }))?.accountNumber ?? null,
+      },
+      "change.oldAccountNumber": {
+        label: "Previous account number",
+        permission: "payouts.account_number.reveal",
+        read: async (client, id) =>
+          (await client.bankAccountChange.findUnique({ where: { id }, select: { oldAccountNumber: true } }))
+            ?.oldAccountNumber ?? null,
+      },
+      "change.newAccountNumber": {
+        label: "New account number",
+        permission: "payouts.account_number.reveal",
+        read: async (client, id) =>
+          (await client.bankAccountChange.findUnique({ where: { id }, select: { newAccountNumber: true } }))
+            ?.newAccountNumber ?? null,
+      },
+    },
+    approvalHandlers: { [BANK_CHANGE_APPROVAL]: applyBankChange },
+    rejectionHandlers: { [BANK_CHANGE_APPROVAL]: rejectBankChange },
   },
 ];
 
