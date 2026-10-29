@@ -8,6 +8,7 @@ import { db } from "../src/lib/db";
 import { MOCK_TENANT_ID, PERSONAS } from "../src/platform/personas";
 import type {
   ApprovalStatus,
+  BankAccountChangeStatus,
   Environment,
   IdCheckResult,
   KycCaseStatus,
@@ -22,6 +23,8 @@ const byId = (id: string) => PERSONAS.find((p) => p.id === id)!.id;
 
 async function reset() {
   // AuditEvent is append-only (DB triggers) and is never cleared here.
+  await db.bankAccountChange.deleteMany();
+  await db.payee.deleteMany();
   await db.flagChange.deleteMany();
   await db.flagValue.deleteMany();
   await db.featureFlag.deleteMany();
@@ -277,12 +280,98 @@ async function seedApproval(
   });
 }
 
+async function seedPayouts() {
+  // Routing numbers use 000 prefixes and account numbers start with 0000; neither is a real account.
+  const payees = [
+    { name: "Acme Supplies (Test)", bank: "First Test Bank (Test)" },
+    { name: "Globex Logistics (Test)", bank: "Second Test Bank (Test)" },
+    { name: "Initech Software (Test)", bank: "First Test Bank (Test)" },
+    { name: "Umbrella Facilities (Test)", bank: "Third Test Credit Union (Test)" },
+    { name: "Hooli Cloud (Test)", bank: "Second Test Bank (Test)" },
+    { name: "Stark Hardware (Test)", bank: "First Test Bank (Test)" },
+  ];
+  const created = [];
+  for (const [i, p] of payees.entries()) {
+    created.push(
+      await db.payee.create({
+        data: {
+          reference: `PAYEE-TEST-${pad(i + 1)}`,
+          name: p.name,
+          bankName: p.bank,
+          routingNumber: `000000${pad(i + 1, 3)}`,
+          accountNumber: `0000${pad(i + 1)}${pad(1000 + i * 7)}`,
+          createdAt: daysAgo(60 - i),
+        },
+      }),
+    );
+  }
+
+  type Seeded = { payee: number; status: BankAccountChangeStatus; by: string; approver?: string; reason: string; comment?: string };
+  const changes: Seeded[] = [
+    { payee: 1, status: "APPROVED", by: "finance.admin1", approver: "finance.admin2", reason: "Vendor switched banks (letter on file)", comment: "Confirmed by phone with known contact" },
+    { payee: 3, status: "REJECTED", by: "finance.admin2", approver: "finance.admin1", reason: "Email request from vendor", comment: "Could not verify by phone; possible BEC attempt" },
+    { payee: 0, status: "PENDING_APPROVAL", by: "finance.admin2", reason: "Vendor moved to a new bank; signed form received" },
+    { payee: 4, status: "PENDING_APPROVAL", by: "finance.admin1", reason: "Updated remittance details from vendor portal" },
+  ];
+  for (const [i, c] of changes.entries()) {
+    const payee = created[c.payee];
+    const createdAt = daysAgo(8 - i * 2);
+    const newDetails = {
+      bankName: "Fourth Test Bank (Test)",
+      routingNumber: `000000${pad(900 + i, 3)}`,
+      accountNumber: `0000${pad(9000 + i)}${pad(4321 + i)}`,
+    };
+    const change = await db.bankAccountChange.create({
+      data: {
+        payeeId: payee.id,
+        oldBankName: payee.bankName,
+        oldRoutingNumber: payee.routingNumber,
+        oldAccountNumber: payee.accountNumber,
+        newBankName: newDetails.bankName,
+        newRoutingNumber: newDetails.routingNumber,
+        newAccountNumber: newDetails.accountNumber,
+        reason: c.reason,
+        status: c.status,
+        requestedById: byId(c.by),
+        createdAt,
+      },
+    });
+    if (c.status === "APPROVED") await db.payee.update({ where: { id: payee.id }, data: newDetails });
+    if (c.status === "PENDING_APPROVAL") await db.payee.update({ where: { id: payee.id }, data: { status: "CHANGE_PENDING" } });
+    await db.approvalRequest.create({
+      data: {
+        app: "payouts",
+        action: "payouts.bank_change.apply",
+        payload: JSON.stringify({ changeId: change.id }),
+        summary: `Change payout bank account for ${payee.name} (${payee.reference}) to ${newDetails.bankName}`,
+        entityType: "BankAccountChange",
+        entityId: change.id,
+        approverPermission: "payouts.bank_change.approve",
+        status: c.status === "PENDING_APPROVAL" ? "PENDING" : c.status,
+        requestedById: byId(c.by),
+        createdAt,
+        resolvedAt: c.approver ? daysAgo(7 - i * 2) : null,
+        decisions: c.approver
+          ? {
+              create: {
+                approverId: byId(c.approver),
+                decision: c.status === "APPROVED" ? "APPROVE" : "REJECT",
+                comment: c.comment,
+              },
+            }
+          : undefined,
+      },
+    });
+  }
+}
+
 async function main() {
   await reset();
   await seedUsers();
   await seedKyc();
   await seedRefunds();
   await seedFlags();
+  await seedPayouts();
   console.log("Seeded synthetic data.");
 }
 

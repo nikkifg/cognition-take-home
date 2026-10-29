@@ -66,3 +66,17 @@ export async function makeKycCase(riskLevel: RiskLevel, status: KycCaseStatus = 
     data: { reference: `KYC-TEST-T${caseN}-${Date.now()}`, applicantId: applicant.id, status },
   });
 }
+
+/** Test-only payee with a synthetic bank account. */
+export async function makePayee() {
+  const k = ++n;
+  return db.payee.create({
+    data: {
+      reference: `PAYEE-TEST-T${Date.now()}-${k}`,
+      name: `Payee T${k} (Test)`,
+      bankName: "First Test Bank (Test)",
+      routingNumber: "000000001",
+      accountNumber: `0000${String(k).padStart(8, "0")}`,
+    },
+  });
+}
