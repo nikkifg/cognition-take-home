@@ -9,6 +9,18 @@ This repo will contain:
 
 See [instructions.md](./instructions.md) for the full assignment.
 
-## Status
+## Stack
 
-Repository initialized. Prototype and run instructions to come.
+Next.js 16 (App Router, TypeScript, Tailwind), Prisma 7 with SQLite (`better-sqlite3` driver adapter), Node 22.
+
+## Running locally
+
+```bash
+nvm use                      # Node 22 (see .nvmrc)
+cp .env.example .env
+npm install                  # also runs `prisma generate`
+npm run db:migrate           # creates ./dev.db and applies migrations
+npm run dev                  # http://localhost:3000
+```
+
+Checks: `npm run lint`, `npm run typecheck`, `npm run build`.

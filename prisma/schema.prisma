@@ -1,0 +1,22 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// Starter model to verify DB wiring; replace with real app models.
+model AuditEvent {
+  id        Int      @id @default(autoincrement())
+  actor     String
+  action    String
+  entity    String
+  createdAt DateTime @default(now())
+}
