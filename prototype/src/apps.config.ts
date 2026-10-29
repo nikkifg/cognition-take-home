@@ -20,6 +20,10 @@ const apps: AppDefinition[] = [
         description: "Claim a case",
         roles: ["compliance_analyst", "compliance_senior_reviewer"],
       },
+      "kyc.audit.view": {
+        description: "View KYC audit events",
+        roles: ["compliance_senior_reviewer"],
+      },
       "kyc.escalation.claim": {
         description: "Claim an escalated case",
         roles: ["compliance_senior_reviewer"],

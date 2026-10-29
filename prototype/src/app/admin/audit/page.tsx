@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { can } from "@/platform/rbac";
+import { auditScope } from "@/platform/rbac";
 import { requireUser } from "@/platform/session";
 
 const LIMIT = 200;
@@ -23,10 +23,15 @@ function actionVariant(action: string) {
 
 async function AuditLog() {
   const user = await requireUser();
-  if (!can(user, "audit.view")) {
-    return <p className="text-sm text-destructive">403: you need the audit.view permission to see the audit log.</p>;
+  const scope = auditScope(user);
+  if (scope.length === 0) {
+    return <p className="text-sm text-destructive">403: you need audit.view or an app&apos;s audit permission to see the audit log.</p>;
   }
-  const events = await db.auditEvent.findMany({ orderBy: { id: "desc" }, take: LIMIT });
+  const events = await db.auditEvent.findMany({
+    where: scope === "all" ? {} : { app: { in: scope } },
+    orderBy: { id: "desc" },
+    take: LIMIT,
+  });
 
   return (
     <div className="rounded-lg border bg-card">
@@ -38,15 +43,13 @@ async function AuditLog() {
             <TableHead>App</TableHead>
             <TableHead>Action</TableHead>
             <TableHead>Entity</TableHead>
-            <TableHead>Before</TableHead>
-            <TableHead>After</TableHead>
             <TableHead>Reason</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {events.length === 0 && (
             <TableRow>
-              <TableCell colSpan={8} className="text-muted-foreground">
+              <TableCell colSpan={6} className="text-muted-foreground">
                 No events yet.
               </TableCell>
             </TableRow>
@@ -68,12 +71,6 @@ async function AuditLog() {
               </TableCell>
               <TableCell className="text-xs">
                 {e.entityType ? `${e.entityType} ${e.entityId ?? ""}` : "—"}
-              </TableCell>
-              <TableCell className="max-w-48 font-mono text-xs whitespace-pre-wrap break-all">
-                {e.before ?? "—"}
-              </TableCell>
-              <TableCell className="max-w-48 font-mono text-xs whitespace-pre-wrap break-all">
-                {e.after ?? "—"}
               </TableCell>
               <TableCell className="text-xs whitespace-normal">{e.reason ?? "—"}</TableCell>
             </TableRow>

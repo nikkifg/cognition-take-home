@@ -185,6 +185,7 @@ describe("KYC four-eyes rule (high-risk cases)", () => {
       where: { actorId: senior.id, action: "action.denied", reason: { contains: "own request" } },
     });
     assert.ok(denied, "blocked self-approval is audited");
+    assert.equal(denied.app, "kyc", "denial is attributed to the request's app so KYC auditors see it");
   });
 
   it("an analyst can't give the second approval", async () => {

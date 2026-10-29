@@ -1,5 +1,5 @@
 import { defineAction } from "./actions";
-import { ApprovalStateError, ForbiddenError, SelfApprovalError } from "./errors";
+import { ApprovalStateError, ForbiddenError, PolicyError, SelfApprovalError } from "./errors";
 import { can } from "./rbac";
 import { getApp } from "./registry";
 import type { ActionContext, Permission } from "./types";
@@ -64,13 +64,14 @@ export const decideApproval = defineAction({
       include: { decisions: true },
     });
     if (!request) throw new ApprovalStateError("Approval request not found");
-    if (request.status !== "PENDING") throw new ApprovalStateError(`Request is ${request.status}`);
-    if (request.requestedById === actor.id) throw new SelfApprovalError();
+    const deny = (err: PolicyError) => Object.assign(err, { app: request.app });
+    if (request.status !== "PENDING") throw deny(new ApprovalStateError(`Request is ${request.status}`));
+    if (request.requestedById === actor.id) throw deny(new SelfApprovalError());
     if (!can(actor, request.approverPermission)) {
-      throw new ForbiddenError(request.approverPermission);
+      throw deny(new ForbiddenError(request.approverPermission));
     }
     if (request.decisions.some((d) => d.approverId === actor.id)) {
-      throw new ApprovalStateError("You already decided this request");
+      throw deny(new ApprovalStateError("You already decided this request"));
     }
 
     await tx.approvalDecision.create({

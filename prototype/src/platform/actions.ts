@@ -54,7 +54,7 @@ export async function runAction<I, O>(
       await writeAudit(db, {
         actor,
         action: "action.denied",
-        app: action.app,
+        app: err.app ?? action.app,
         reason: `${action.name}: ${err.message}`,
       });
     }
