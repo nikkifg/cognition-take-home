@@ -50,6 +50,6 @@ export type AppDefinition = {
   sensitiveFields?: Record<string, SensitiveField>;
   /** Run when an ApprovalRequest with this `action` key is fully approved. */
   approvalHandlers?: Record<string, ApprovalHandler>;
-  /** Run when an ApprovalRequest with this `action` key is rejected (e.g. to release a hold). */
+  /** Optional: run when a request with this `action` key is rejected. */
   rejectionHandlers?: Record<string, ApprovalHandler>;
 };

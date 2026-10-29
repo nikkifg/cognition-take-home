@@ -55,7 +55,7 @@ async function seedKyc() {
     { status: "OPEN" },
     { status: "IN_REVIEW", claimedBy: analyst },
     { status: "IN_REVIEW", claimedBy: senior },
-    { status: "ESCALATED", claimedBy: analyst, reason: "ID check needs manual review: document glare." },
+    { status: "ESCALATED", reason: "ID check needs manual review: document glare." },
     { status: "APPROVED", claimedBy: analyst, decidedBy: analyst, reason: "ID check passed; address verified." },
     { status: "APPROVED", claimedBy: senior, decidedBy: senior, reason: "Low risk; documents consistent." },
     { status: "REJECTED", claimedBy: analyst, decidedBy: analyst, reason: "Document failed authenticity check." },

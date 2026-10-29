@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { defineAction, runAction } from "@/platform/actions";
 import { decideApproval, requestApproval } from "@/platform/approvals";
 import { ForbiddenError, SelfApprovalError, ApprovalStateError } from "@/platform/errors";
-import { can, permissionCatalog } from "@/platform/rbac";
+import { auditScope, can, permissionCatalog } from "@/platform/rbac";
 import { listApps, registerAppForTesting } from "@/platform/registry";
 import { ROLES, type Actor } from "@/platform/roles";
 import { revealField } from "@/platform/sensitive";
@@ -155,6 +155,14 @@ describe("Audit", () => {
     await assert.rejects(db.auditEvent.update({ where: { id: event.id }, data: { reason: "x" } }), /append-only/);
     await assert.rejects(db.auditEvent.delete({ where: { id: event.id } }), /append-only/);
     await assert.rejects(db.auditEvent.deleteMany(), /append-only/);
+  });
+
+  it("scopes the audit log: admin sees every app, senior reviewers only KYC, others nothing", () => {
+    assert.equal(auditScope({ role: "admin" }), "all");
+    assert.deepEqual(auditScope({ role: "compliance_senior_reviewer" }), ["kyc"]);
+    assert.deepEqual(auditScope({ role: "compliance_analyst" }), []);
+    assert.deepEqual(auditScope({ role: "finance_admin" }), []);
+    assert.deepEqual(auditScope(null), []);
   });
 });
 
