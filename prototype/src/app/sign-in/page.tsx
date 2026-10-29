@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { signIn } from "@/auth";
 import { db } from "@/lib/db";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,7 +39,23 @@ async function PersonaList() {
   );
 }
 
-export default function SignInPage() {
+const ERROR_MESSAGES: Record<string, string> = {
+  CredentialsSignin: "That account isn't in the mock Entra tenant. Pick one of the personas below.",
+};
+
+async function SignInError({ searchParams }: { searchParams: PageProps<"/sign-in">["searchParams"] }) {
+  const { error } = await searchParams;
+  if (!error) return null;
+  const code = Array.isArray(error) ? error[0] : error;
+  return (
+    <Alert variant="destructive" className="mb-4">
+      <AlertTitle>Sign-in failed</AlertTitle>
+      <AlertDescription>{ERROR_MESSAGES[code] ?? `Something went wrong (${code}). Try again.`}</AlertDescription>
+    </Alert>
+  );
+}
+
+export default function SignInPage({ searchParams }: PageProps<"/sign-in">) {
   return (
     <Card className="mx-auto w-full max-w-2xl">
       <CardHeader>
@@ -48,6 +65,9 @@ export default function SignInPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        <Suspense fallback={null}>
+          <SignInError searchParams={searchParams} />
+        </Suspense>
         <Suspense fallback={<p className="text-sm text-muted-foreground">Loading accounts…</p>}>
           <PersonaList />
         </Suspense>
