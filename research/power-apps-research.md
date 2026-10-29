@@ -46,7 +46,7 @@ Two types of app exist ([canvas](https://learn.microsoft.com/en-us/power-apps/ma
   - Dataverse, custom connectors, and premium connectors all need a **standalone Power Apps license per user** ([licensing FAQ](https://learn.microsoft.com/en-us/power-platform/admin/powerapps-flow-licensing-faq)).
   - A PCF component for a good document/image viewer.
   - Possibly AI Builder ID reader (add-on cost; Latin text only).
-  - Read-access logging goes beyond Dataverse auditing, which **does not log retrieve or export operations**. Access logs go to Purview, and for production environments only ([auditing](https://learn.microsoft.com/en-us/power-platform/admin/manage-dataverse-auditing)).
+  - Read-access logging: Dataverse's change audit doesn't log reads or exports, but turning on **Read logs** sends view and export events to Microsoft Purview ([auditing](https://learn.microsoft.com/en-us/power-platform/admin/manage-dataverse-auditing), [activity logs](https://learn.microsoft.com/en-us/power-platform/admin/enable-use-comprehensive-auditing)). Limits: production environments only. Bulk views and Excel exports don't reliably record *which* records were seen. Purview keeps logs 180 days by default; keeping them longer needs E5, and 5 years needs the 10-Year Audit Log Retention add-on ([retention](https://learn.microsoft.com/en-us/purview/audit-log-retention-policies)).
 
 ### B. Refunds dashboard
 **Requirements**
@@ -89,7 +89,7 @@ A fit rating based on the requirements above. It describes Power Apps only and i
 
 | App | Fit | Works well | Hard or needs pro-code |
 |---|---|---|---|
-| **KYC review queue** | **Good** | This is the platform's sweet spot. Queues, case forms, roles, field masking, approvals, and change audit are mostly configuration (model-driven app + Dataverse). | KYC vendor integration (custom connector). Document viewer (PCF). Logging who *viewed* PII (Dataverse auditing doesn't log reads). Keeping 5-year records (needs long-term retention or export). |
+| **KYC review queue** | **Good** | This is the platform's sweet spot. Queues, case forms, roles, field masking, approvals, and change audit are mostly configuration (model-driven app + Dataverse). | KYC vendor integration (custom connector). Document viewer (PCF). Logging who *viewed* PII works through Purview, but keeping those logs 5 years needs E5 + an add-on. Keeping 5-year records (audit retention + long-term retention or export). |
 | **Refunds dashboard** | **Moderate** | Request forms, amount-threshold approvals, status views, charts. | Moving money safely: idempotency, retries, and reconciliation belong in a backend API, not Power Fx. Large transaction tables run into delegation limits. Stripe and Postgres connectors are Premium. |
 | **Feature-flag admin panel** | **Weak** | A simple CRUD screen with approvals and audit. | It's mostly a thin UI over an engineering API. Services can't read flags from Dataverse at runtime because of API limits (§5). There's no LaunchDarkly connector. Engineers expect Git-based review. Dedicated flag vendors already include approval workflows ([LaunchDarkly approvals](https://launchdarkly.com/docs/home/releases/approvals)). |
 
@@ -134,8 +134,8 @@ A fit rating based on the requirements above. It describes Power Apps only and i
 - **Vendor lock-in:** Dataverse schemas, Power Fx, and flows don't move to other platforms. Leaving means a rebuild.
 
 **Security and compliance**
-- **Read auditing gap:** Dataverse auditing doesn't log record reads or exports (§2A).
-- **Backups:** kept 7 days by default, up to 28 days for managed production environments ([docs](https://learn.microsoft.com/en-us/power-platform/admin/backup-restore-environments)). Long-term records need [long-term retention](https://learn.microsoft.com/en-us/power-apps/maker/data-platform/data-retention-overview) (requires Managed Environments) or export.
+- **Read auditing:** available through Purview activity logging, not Dataverse auditing itself. Production environments only; bulk views and exports aren't tracked per record; 5-year retention needs E5 + the 10-Year Audit Log Retention add-on (§2A).
+- **Backups vs. record-keeping:** backups (for disaster recovery) are kept 7 days by default, up to 28 days for managed production environments ([docs](https://learn.microsoft.com/en-us/power-platform/admin/backup-restore-environments)). Backups aren't how 5-year records are kept: Dataverse change-audit logs can be retained forever ([docs](https://learn.microsoft.com/en-us/power-platform/admin/manage-dataverse-auditing)), and old records can move to [long-term retention](https://learn.microsoft.com/en-us/power-apps/maker/data-platform/data-retention-overview) (requires Managed Environments) or be exported.
 - **Identity:** Power Platform runs inside a Microsoft Entra tenant ([docs](https://learn.microsoft.com/en-us/power-platform/admin/security/data-storage)). A company standardized on Okta or Google Workspace would need to maintain Entra identities for app users.
 
 **Platform churn**
