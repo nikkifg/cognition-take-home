@@ -6,7 +6,7 @@ import { runAction } from "@/platform/actions";
 import { decideApproval } from "@/platform/approvals";
 import { PolicyError } from "@/platform/errors";
 import { requireUser } from "@/platform/session";
-import { claimCase, decideCase, DECISIONS, type Decision } from "./_lib/case-actions";
+import { claimCase, decideCase, DECISIONS, type Decision } from "@/apps/kyc/actions";
 
 export type FormState = { error?: string } | undefined;
 

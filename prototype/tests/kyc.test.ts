@@ -5,8 +5,8 @@ import { runAction } from "@/platform/actions";
 import { decideApproval } from "@/platform/approvals";
 import { ForbiddenError, PolicyError, SelfApprovalError } from "@/platform/errors";
 import type { Actor } from "@/platform/roles";
-import { claimCase, decideCase } from "@/app/kyc/_lib/case-actions";
-import { CaseStateError } from "@/app/kyc/_lib/errors";
+import { claimCase, decideCase } from "@/apps/kyc/actions";
+import { CaseStateError } from "@/apps/kyc/errors";
 import { auditFor, makeKycCase, makeUser } from "./fixtures";
 
 let analyst: Actor, analyst2: Actor, senior: Actor, senior2: Actor, finance: Actor, admin: Actor;

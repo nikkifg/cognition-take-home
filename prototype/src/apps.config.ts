@@ -1,7 +1,7 @@
 // App registry. New apps register here: navigation, permissions (and which
 // roles get them), sensitive fields and approval handlers. See AGENTS.md.
 import { applyProdChange } from "@/apps/flags/approval-handlers";
-import { applySecondApproval, returnAfterSecondReviewRejected } from "@/app/kyc/_lib/second-review";
+import { applySecondApproval, returnAfterSecondReviewRejected } from "@/apps/kyc/approval-handlers";
 import { PROD_CHANGE } from "@/apps/flags/policy";
 import type { AppDefinition } from "@/platform/types";
 import { approveRefund, rejectRefund } from "@/apps/refunds/approval-handlers";

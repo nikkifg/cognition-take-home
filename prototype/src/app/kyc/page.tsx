@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 import { can } from "@/platform/rbac";
 import type { Actor } from "@/platform/roles";
 import { requireUser } from "@/platform/session";
-import { CLAIMABLE } from "./_lib/case-actions";
+import { CLAIMABLE } from "@/apps/kyc/actions";
 import { claimCaseAction } from "./actions";
 import { RiskBadge, StatusBadge } from "./_components/badges";
 import { ClaimButton } from "./_components/case-forms";
