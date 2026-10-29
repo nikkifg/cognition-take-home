@@ -15,7 +15,10 @@ Next.js 16 (App Router, TypeScript, Tailwind), Prisma 7 with SQLite (`better-sql
 
 ## Running locally
 
+The app lives in [`prototype/`](./prototype).
+
 ```bash
+cd prototype
 nvm use                      # Node 22 (see .nvmrc)
 cp .env.example .env
 npm install                  # also runs `prisma generate`
