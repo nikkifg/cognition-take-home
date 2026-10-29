@@ -35,6 +35,19 @@ export async function makeFlag(key: string) {
 export const auditFor = (entityId: string) =>
   db.auditEvent.findMany({ where: { entityId }, orderBy: { id: "asc" } });
 
+export async function makeTransaction(amountCents: number) {
+  const ref = `TXN-TEST-T${Date.now()}-${++n}`;
+  return db.transaction.create({
+    data: {
+      reference: ref,
+      customerRef: `CUST-TEST-T${n}`,
+      customerEmail: `test.customer.t${n}@fintech.example`,
+      amountCents,
+      createdAt: new Date(),
+    },
+  });
+}
+
 let caseN = 0;
 
 /** Test-only KYC case for a synthetic applicant. */

@@ -6,7 +6,15 @@
 import "dotenv/config";
 import { db } from "../src/lib/db";
 import { MOCK_TENANT_ID, PERSONAS } from "../src/platform/personas";
-import type { Environment, IdCheckResult, KycCaseStatus, RefundStatus, RiskLevel } from "../src/generated/prisma/enums";
+import type {
+  ApprovalStatus,
+  Environment,
+  IdCheckResult,
+  KycCaseStatus,
+  RefundReasonCode,
+  RefundStatus,
+  RiskLevel,
+} from "../src/generated/prisma/enums";
 
 const pad = (n: number, w = 4) => String(n).padStart(w, "0");
 const daysAgo = (d: number) => new Date(Date.UTC(2026, 9, 1) - d * 86_400_000);
@@ -93,40 +101,87 @@ async function seedKyc() {
 }
 
 async function seedRefunds() {
-  const amounts = [1299, 4500, 8999, 15000, 2500, 74900, 3200, 120000, 999, 56000, 18950, 4200];
+  // Includes $50 and $400 unrefunded charges and $42.13, which the mock
+  // processor declines.
+  const amounts = [1299, 5000, 8999, 15000, 2500, 74900, 3200, 120000, 999, 40000, 18950, 4213, 9999, 10000];
   const txns = [];
   for (const [i, amountCents] of amounts.entries()) {
+    const customer = pad((i % 6) + 1);
     txns.push(
       await db.transaction.create({
         data: {
           reference: `TXN-TEST-${pad(i + 1)}`,
-          customerRef: `CUST-TEST-${pad((i % 6) + 1)}`,
+          customerRef: `CUST-TEST-${customer}`,
+          customerEmail: `test.customer${customer}@fintech.example`,
           amountCents,
           createdAt: daysAgo(20 - i),
         },
       }),
     );
   }
-  const requests: { txn: number; amount: number; status: RefundStatus; by: string; reason: string }[] = [
-    { txn: 0, amount: 1299, status: "PROCESSED", by: "support.agent", reason: "Duplicate charge" },
-    { txn: 2, amount: 8999, status: "REQUESTED", by: "support.agent", reason: "Item not received" },
-    { txn: 3, amount: 5000, status: "REQUESTED", by: "support.agent", reason: "Partial service outage credit" },
-    { txn: 5, amount: 74900, status: "REJECTED", by: "support.agent", reason: "Customer request outside window" },
-    { txn: 7, amount: 120000, status: "APPROVED", by: "finance.approver1", reason: "Chargeback pre-emption" },
-    { txn: 9, amount: 56000, status: "FAILED", by: "finance.approver2", reason: "Billing error" },
+  type Seeded = {
+    txn: number;
+    status: RefundStatus;
+    by: string;
+    reasonCode: RefundReasonCode;
+    approval?: { status: ApprovalStatus; by?: string };
+  };
+  const requests: Seeded[] = [
+    { txn: 0, status: "SUCCEEDED", by: "finance.admin2", reasonCode: "DUPLICATE_CHARGE", approval: { status: "APPROVED", by: "finance.admin1" } },
+    { txn: 3, status: "PENDING_APPROVAL", by: "finance.admin2", reasonCode: "CUSTOMER_REQUEST", approval: { status: "PENDING" } },
+    { txn: 5, status: "REJECTED", by: "finance.admin2", reasonCode: "OTHER", approval: { status: "REJECTED", by: "finance.admin1" } },
+    { txn: 7, status: "SUCCEEDED", by: "finance.admin1", reasonCode: "FRAUD", approval: { status: "APPROVED", by: "finance.admin2" } },
+    { txn: 8, status: "FAILED", by: "finance.admin1", reasonCode: "CUSTOMER_REQUEST", approval: { status: "APPROVED", by: "finance.admin2" } },
+    { txn: 10, status: "PENDING_APPROVAL", by: "finance.admin1", reasonCode: "DUPLICATE_CHARGE", approval: { status: "PENDING" } },
   ];
+  const txnStatus: Partial<Record<RefundStatus, string>> = {
+    SUCCEEDED: "REFUNDED",
+    PENDING_APPROVAL: "REFUND_PENDING",
+    PENDING: "REFUND_PENDING",
+  };
   for (const [i, r] of requests.entries()) {
-    await db.refundRequest.create({
+    const txn = txns[r.txn];
+    const refund = await db.refundRequest.create({
       data: {
-        transactionId: txns[r.txn].id,
-        amountCents: r.amount,
-        reason: r.reason,
+        transactionId: txn.id,
+        amountCents: txn.amountCents,
+        reasonCode: r.reasonCode,
         status: r.status,
         idempotencyKey: `idem-test-${pad(i + 1)}`,
-        processorRef: r.status === "PROCESSED" ? `mockpay_re_test_${pad(i + 1)}` : null,
+        processorRef: r.status === "SUCCEEDED" || r.status === "FAILED" ? `mockpay_re_test_${pad(i + 1)}` : null,
+        failureReason: r.status === "FAILED" ? "card_declined (seeded)" : null,
         requestedById: byId(r.by),
+        createdAt: daysAgo(10 - i),
       },
     });
+    if (txnStatus[r.status]) {
+      await db.transaction.update({ where: { id: txn.id }, data: { status: txnStatus[r.status] } });
+    }
+    if (r.approval) {
+      await db.approvalRequest.create({
+        data: {
+          app: "refunds",
+          action: "refunds.execute",
+          payload: JSON.stringify({ refundId: refund.id }),
+          summary: `Refund $${(txn.amountCents / 100).toFixed(2)} on ${txn.reference} (seeded)`,
+          entityType: "RefundRequest",
+          entityId: refund.id,
+          approverPermission: "refunds.approve",
+          status: r.approval.status,
+          requestedById: byId(r.by),
+          createdAt: daysAgo(10 - i),
+          resolvedAt: r.approval.by ? daysAgo(9 - i) : null,
+          decisions: r.approval.by
+            ? {
+                create: {
+                  approverId: byId(r.approval.by),
+                  decision: r.approval.status === "APPROVED" ? "APPROVE" : "REJECT",
+                },
+              }
+            : undefined,
+        },
+      });
+    }
   }
 }
 

@@ -48,7 +48,7 @@ registerAppForTesting({
   viewPermission: "fixture.view",
   permissions: {
     "fixture.view": { description: "view", roles: ["engineer"] },
-    "fixture.approve": { description: "approve", roles: ["engineer", "finance_approver"] },
+    "fixture.approve": { description: "approve", roles: ["engineer", "finance_admin"] },
   },
   approvalHandlers: {
     "fixture.set_prod": async (ctx, payload) => {
@@ -76,16 +76,15 @@ const requestProdChange = defineAction({
     }),
 });
 
-let engineer: Actor, engineer2: Actor, engineer3: Actor, support: Actor, finance: Actor;
+let engineer: Actor, engineer2: Actor, engineer3: Actor, finance: Actor;
 let analyst: Actor, senior: Actor;
 
 before(async () => {
-  [engineer, engineer2, engineer3, support, finance, analyst, senior] = await Promise.all([
+  [engineer, engineer2, engineer3, finance, analyst, senior] = await Promise.all([
     makeUser("engineer"),
     makeUser("engineer"),
     makeUser("engineer"),
-    makeUser("support_agent"),
-    makeUser("finance_approver"),
+    makeUser("finance_admin"),
     makeUser("compliance_analyst"),
     makeUser("compliance_senior_reviewer"),
   ]);
@@ -98,7 +97,7 @@ describe("RBAC", () => {
     const flag = await makeFlag("rbac");
     const dev = flag.values.find((v) => v.environment === "dev")!;
 
-    await assert.rejects(runAction(setDevFlag, support, { valueId: dev.id, enabled: true }), (e) => {
+    await assert.rejects(runAction(setDevFlag, analyst, { valueId: dev.id, enabled: true }), (e) => {
       assert.ok(e instanceof ForbiddenError);
       assert.equal(e.status, 403);
       return true;
@@ -107,7 +106,7 @@ describe("RBAC", () => {
     const after = await db.flagValue.findUniqueOrThrow({ where: { id: dev.id } });
     assert.equal(after.enabled, false);
     const denied = await db.auditEvent.findFirst({
-      where: { actorId: support.id, action: "action.denied" },
+      where: { actorId: analyst.id, action: "action.denied" },
     });
     assert.match(denied?.reason ?? "", /flags\.value\.set: Missing permission: flags\.update_nonprod/);
   });
@@ -162,7 +161,7 @@ describe("Audit", () => {
     assert.equal(auditScope({ role: "admin" }), "all");
     assert.deepEqual(auditScope({ role: "compliance_senior_reviewer" }), ["kyc"]);
     assert.deepEqual(auditScope({ role: "compliance_analyst" }), []);
-    assert.deepEqual(auditScope({ role: "support_agent" }), []);
+    assert.deepEqual(auditScope({ role: "finance_admin" }), []);
     assert.deepEqual(auditScope(null), []);
   });
 });

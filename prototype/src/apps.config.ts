@@ -2,6 +2,8 @@
 // roles get them), sensitive fields and approval handlers. See AGENTS.md.
 import { applySecondApproval, returnAfterSecondReviewRejected } from "@/app/kyc/_lib/second-review";
 import type { AppDefinition } from "@/platform/types";
+import { approveRefund, rejectRefund } from "@/apps/refunds/approval-handlers";
+import { EXECUTE_APPROVAL_ACTION } from "@/apps/refunds/policy";
 
 const apps: AppDefinition[] = [
   {
@@ -57,24 +59,44 @@ const apps: AppDefinition[] = [
   {
     id: "refunds",
     name: "Refunds dashboard",
-    description: "Request and approve refunds with per-role limits.",
+    description: "Search transactions and refund them; a second finance admin approves each refund.",
     href: "/refunds",
-    status: "planned",
+    status: "live",
     viewPermission: "refunds.view",
     permissions: {
       "refunds.view": {
         description: "View transactions and refunds",
-        roles: ["support_agent", "finance_approver", "admin"],
+        roles: ["finance_admin", "admin"],
       },
       "refunds.request": {
-        description: "Request a refund",
-        roles: ["support_agent", "finance_approver"],
+        description: "Request a full refund (another finance admin must approve it)",
+        roles: ["finance_admin"],
+      },
+      "refunds.execute": {
+        description: "Send an authorized refund to the payment processor (incl. retries)",
+        roles: ["finance_admin"],
       },
       "refunds.approve": {
-        description: "Approve refunds over the requester's limit",
-        roles: ["finance_approver"],
+        description: "Approve or reject refund requests",
+        roles: ["finance_admin"],
+      },
+      "refunds.customer_email.reveal": {
+        description: "Reveal a customer's full email address",
+        roles: ["finance_admin"],
       },
     },
+    sensitiveFields: {
+      "transaction.customerEmail": {
+        label: "Customer email",
+        permission: "refunds.customer_email.reveal",
+        read: async (client, id) =>
+          (await client.transaction.findUnique({ where: { id }, select: { customerEmail: true } }))
+            ?.customerEmail ?? null,
+        mask: (v) => `${v.slice(0, 1)}•••${v.slice(v.indexOf("@"))}`,
+      },
+    },
+    approvalHandlers: { [EXECUTE_APPROVAL_ACTION]: approveRefund },
+    rejectionHandlers: { [EXECUTE_APPROVAL_ACTION]: rejectRefund },
   },
   {
     id: "flags",

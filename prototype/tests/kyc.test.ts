@@ -9,15 +9,15 @@ import { claimCase, decideCase } from "@/app/kyc/_lib/case-actions";
 import { CaseStateError } from "@/app/kyc/_lib/errors";
 import { auditFor, makeKycCase, makeUser } from "./fixtures";
 
-let analyst: Actor, analyst2: Actor, senior: Actor, senior2: Actor, support: Actor, admin: Actor;
+let analyst: Actor, analyst2: Actor, senior: Actor, senior2: Actor, finance: Actor, admin: Actor;
 
 before(async () => {
-  [analyst, analyst2, senior, senior2, support, admin] = await Promise.all([
+  [analyst, analyst2, senior, senior2, finance, admin] = await Promise.all([
     makeUser("compliance_analyst"),
     makeUser("compliance_analyst"),
     makeUser("compliance_senior_reviewer"),
     makeUser("compliance_senior_reviewer"),
-    makeUser("support_agent"),
+    makeUser("finance_admin"),
     makeUser("admin"),
   ]);
 });
@@ -84,7 +84,7 @@ describe("KYC claim rule", () => {
 
   it("roles without kyc.case.claim are rejected (403)", async () => {
     const c = await makeKycCase("LOW");
-    for (const actor of [support, admin]) {
+    for (const actor of [finance, admin]) {
       await assert.rejects(runAction(claimCase, actor, { caseId: c.id }), ForbiddenError);
     }
     assert.equal((await getCase(c.id)).claimedById, null);
