@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import type { Actor, Role } from "@/platform/roles";
+import type { KycCaseStatus, RiskLevel } from "@/generated/prisma/enums";
 
 let n = 0;
 
@@ -33,3 +34,16 @@ export async function makeFlag(key: string) {
 
 export const auditFor = (entityId: string) =>
   db.auditEvent.findMany({ where: { entityId }, orderBy: { id: "asc" } });
+
+let caseN = 0;
+
+/** Test-only KYC case for a synthetic applicant. */
+export async function makeKycCase(riskLevel: RiskLevel, status: KycCaseStatus = "OPEN") {
+  caseN++;
+  const applicant = await db.kycApplicant.create({
+    data: { displayName: `Test Applicant K${caseN}`, country: "US", riskLevel, ssn: `000-11-${String(caseN).padStart(4, "0")}` },
+  });
+  return db.kycCase.create({
+    data: { reference: `KYC-TEST-T${caseN}-${Date.now()}`, applicantId: applicant.id, status },
+  });
+}
