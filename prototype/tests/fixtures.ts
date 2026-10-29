@@ -41,7 +41,7 @@ let caseN = 0;
 export async function makeKycCase(riskLevel: RiskLevel, status: KycCaseStatus = "OPEN") {
   caseN++;
   const applicant = await db.kycApplicant.create({
-    data: { displayName: `Test Applicant K${caseN}`, country: "US", riskLevel, ssn: `000-11-${String(caseN).padStart(4, "0")}` },
+    data: { displayName: `Applicant K${caseN} (Test)`, country: "US", riskLevel, ssn: `000-11-${String(caseN).padStart(4, "0")}` },
   });
   return db.kycCase.create({
     data: { reference: `KYC-TEST-T${caseN}-${Date.now()}`, applicantId: applicant.id, status },
