@@ -27,8 +27,10 @@ Rules for every Devin (or other agent) session in this repo. The app lives in
    Never send the raw value to the client, log it, or put it in an audit
    event. Reveals go through `revealField`, which checks the permission and
    writes an audit event.
-5. **Apps register via `src/apps.config.ts`.** A new app adds its entry there
-   and its pages under `src/app/<appId>/`. Do not edit `prisma/schema.prisma`
+5. **Apps register via `src/apps.config.ts`.** A new app adds its entry there,
+   its pages under `src/app/<appId>/` and its domain code (actions, approval
+   handlers, errors, policy) under `src/apps/<appId>/` (see
+   [docs/playbook.md](./docs/playbook.md)). Do not edit `prisma/schema.prisma`
    or `src/platform/` unless the request needs it; if it does, say why in the
    PR description and keep the change minimal (add a migration with
    `npm run db:migrate -- --name <change>`).

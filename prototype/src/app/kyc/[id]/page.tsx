@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { Masked } from "@/platform/masked";
 import { can } from "@/platform/rbac";
 import { requireUser } from "@/platform/session";
-import { CLAIMABLE, SECOND_REVIEW } from "../_lib/case-actions";
+import { CLAIMABLE, SECOND_REVIEW } from "@/apps/kyc/actions";
 import { claimCaseAction, decideCaseAction, secondReviewAction } from "../actions";
 import { RiskBadge, StatusBadge } from "../_components/badges";
 import { ClaimButton, DecisionForm, SecondReviewForm } from "../_components/case-forms";
