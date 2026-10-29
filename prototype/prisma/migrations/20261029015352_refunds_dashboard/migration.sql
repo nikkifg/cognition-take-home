@@ -1,7 +1,8 @@
 -- Refunds dashboard: reason codes, processor statuses and a sensitive customer
 -- email. Existing rows are backfilled so the migration works on a populated
 -- dev.db: free-text reasons become OTHER, old statuses map to the new ones and
--- customer emails are derived synthetic addresses.
+-- customer emails are derived synthetic addresses. Old REQUESTED rows have no
+-- approval request, so they become REJECTED and free their transaction.
 -- RedefineTables
 PRAGMA defer_foreign_keys=ON;
 PRAGMA foreign_keys=OFF;
@@ -25,7 +26,7 @@ SELECT "amountCents", "createdAt", "id", "idempotencyKey", "processorRef", 'OTHE
     CASE "status"
         WHEN 'PROCESSED' THEN 'SUCCEEDED'
         WHEN 'APPROVED' THEN 'PENDING'
-        WHEN 'REQUESTED' THEN 'PENDING_APPROVAL'
+        WHEN 'REQUESTED' THEN 'REJECTED'
         ELSE "status"
     END,
     "transactionId", "updatedAt"
@@ -49,7 +50,7 @@ INSERT INTO "new_Transaction" ("amountCents", "createdAt", "currency", "customer
 SELECT t."amountCents", t."createdAt", t."currency", lower(t."customerRef") || '@fintech.example', t."customerRef", t."id", t."reference",
     CASE
         WHEN EXISTS (SELECT 1 FROM "RefundRequest" r WHERE r."transactionId" = t."id" AND r."status" = 'SUCCEEDED') THEN 'REFUNDED'
-        WHEN EXISTS (SELECT 1 FROM "RefundRequest" r WHERE r."transactionId" = t."id" AND r."status" IN ('PENDING', 'PENDING_APPROVAL')) THEN 'REFUND_PENDING'
+        WHEN EXISTS (SELECT 1 FROM "RefundRequest" r WHERE r."transactionId" = t."id" AND r."status" = 'PENDING') THEN 'REFUND_PENDING'
         ELSE t."status"
     END
 FROM "Transaction" t;
