@@ -1,3 +1,5 @@
+Platform rules for this app are in [../AGENTS.md](../AGENTS.md); review checks in [../REVIEW.md](../REVIEW.md).
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know
