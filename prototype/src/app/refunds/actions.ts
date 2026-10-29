@@ -27,7 +27,7 @@ async function handle(fn: () => Promise<string>): Promise<FormResult> {
 function outcome(status: keyof typeof STATUS_LABELS, failureReason?: string | null) {
   if (status === "SUCCEEDED") return "Refund succeeded.";
   if (status === "FAILED") return `Refund failed: ${failureReason ?? "declined by processor"}.`;
-  if (status === "PENDING_APPROVAL") return "Sent to a finance approver: $100 and above needs approval.";
+  if (status === "PENDING_APPROVAL") return "Sent to a finance approver for approval.";
   return `Refund is ${STATUS_LABELS[status].toLowerCase()}.`;
 }
 
@@ -38,9 +38,7 @@ export async function requestRefundAction(_prev: FormResult, form: FormData): Pr
   if (!isReasonCode(reasonCode)) return { ok: false, message: "Pick a reason code." };
   return handle(async () => {
     const requested = await runAction(requestRefund, user, { transactionId, reasonCode });
-    if (requested.status !== "PENDING") return outcome(requested.status);
-    const processed = await runAction(processRefund, user, { refundId: requested.id });
-    return outcome(processed.status, processed.failureReason);
+    return outcome(requested.status);
   });
 }
 

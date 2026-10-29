@@ -101,8 +101,8 @@ async function seedKyc() {
 }
 
 async function seedRefunds() {
-  // Includes $50 and $400 unrefunded charges, the $99.99/$100.00 threshold edge,
-  // and $42.13, which the mock processor declines.
+  // Includes $50 and $400 unrefunded charges and $42.13, which the mock
+  // processor declines.
   const amounts = [1299, 5000, 8999, 15000, 2500, 74900, 3200, 120000, 999, 40000, 18950, 4213, 9999, 10000];
   const txns = [];
   for (const [i, amountCents] of amounts.entries()) {
@@ -127,11 +127,11 @@ async function seedRefunds() {
     approval?: { status: ApprovalStatus; by?: string };
   };
   const requests: Seeded[] = [
-    { txn: 0, status: "SUCCEEDED", by: "support.agent", reasonCode: "DUPLICATE_CHARGE" },
+    { txn: 0, status: "SUCCEEDED", by: "support.agent", reasonCode: "DUPLICATE_CHARGE", approval: { status: "APPROVED", by: "finance.approver1" } },
     { txn: 3, status: "PENDING_APPROVAL", by: "support.agent", reasonCode: "CUSTOMER_REQUEST", approval: { status: "PENDING" } },
     { txn: 5, status: "REJECTED", by: "support.agent", reasonCode: "OTHER", approval: { status: "REJECTED", by: "finance.approver1" } },
     { txn: 7, status: "SUCCEEDED", by: "finance.approver1", reasonCode: "FRAUD", approval: { status: "APPROVED", by: "finance.approver2" } },
-    { txn: 8, status: "FAILED", by: "support.agent", reasonCode: "CUSTOMER_REQUEST" },
+    { txn: 8, status: "FAILED", by: "support.agent", reasonCode: "CUSTOMER_REQUEST", approval: { status: "APPROVED", by: "finance.approver2" } },
     { txn: 10, status: "PENDING_APPROVAL", by: "finance.approver1", reasonCode: "DUPLICATE_CHARGE", approval: { status: "PENDING" } },
   ];
   const txnStatus: Partial<Record<RefundStatus, string>> = {

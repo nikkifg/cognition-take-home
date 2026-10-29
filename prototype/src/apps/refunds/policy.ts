@@ -1,11 +1,6 @@
 // Refund rules shared by server code and the UI. No server-only imports here.
 import type { RefundReasonCode, RefundStatus } from "@/generated/prisma/enums";
 
-/** Refunds at or above this amount need a finance approver's sign-off. */
-export const APPROVAL_THRESHOLD_CENTS = 100_00;
-
-export const needsApproval = (amountCents: number) => amountCents >= APPROVAL_THRESHOLD_CENTS;
-
 export const REASON_CODES: Record<RefundReasonCode, string> = {
   DUPLICATE_CHARGE: "Duplicate charge",
   CUSTOMER_REQUEST: "Customer request",

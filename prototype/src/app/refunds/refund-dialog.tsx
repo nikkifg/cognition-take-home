@@ -22,7 +22,6 @@ export function RefundDialog({
   transactionId,
   reference,
   amount,
-  needsApproval,
   refundable,
 }: {
   /** Kept mounted after the refund so the outcome stays visible; the trigger hides. */
@@ -30,7 +29,6 @@ export function RefundDialog({
   transactionId: string;
   reference: string;
   amount: string;
-  needsApproval: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(requestRefundAction, null);
@@ -51,10 +49,7 @@ export function RefundDialog({
             Refund {amount} on {reference}
           </DialogTitle>
           <DialogDescription>
-            Full refund only.{" "}
-            {needsApproval
-              ? "$100 and above: this creates a request for a finance approver."
-              : "Under $100: this executes immediately."}
+            Full refund only. A finance approver must approve it before it is sent to the processor.
           </DialogDescription>
         </DialogHeader>
         {state && (
@@ -93,7 +88,7 @@ export function RefundDialog({
                 </Button>
               </DialogClose>
               <Button type="submit" disabled={pending}>
-                {needsApproval ? "Request approval" : `Refund ${amount}`}
+                Request approval
               </Button>
             </DialogFooter>
           </form>

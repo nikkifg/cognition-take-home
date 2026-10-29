@@ -48,7 +48,7 @@ const apps: AppDefinition[] = [
   {
     id: "refunds",
     name: "Refunds dashboard",
-    description: "Search transactions and refund them; $100+ needs a finance approver.",
+    description: "Search transactions and request refunds; a finance approver signs off on each.",
     href: "/refunds",
     status: "live",
     viewPermission: "refunds.view",
@@ -58,7 +58,7 @@ const apps: AppDefinition[] = [
         roles: ["support_agent", "finance_approver", "admin"],
       },
       "refunds.request": {
-        description: "Request a full refund (under $100 executes immediately)",
+        description: "Request a full refund (needs a finance approver)",
         roles: ["support_agent", "finance_approver"],
       },
       "refunds.execute": {
@@ -66,7 +66,7 @@ const apps: AppDefinition[] = [
         roles: ["support_agent", "finance_approver"],
       },
       "refunds.approve": {
-        description: "Approve or reject refunds of $100 and above",
+        description: "Approve or reject refund requests",
         roles: ["finance_approver"],
       },
       "refunds.customer_email.reveal": {

@@ -11,13 +11,12 @@ import {
   TXN_SETTLED,
   formatCents,
   isReasonCode,
-  needsApproval,
 } from "./policy";
 import { getPaymentProcessor } from "./processor";
 
 /**
- * Request a full refund. Under the threshold it is created PENDING (call
- * `processRefund` next); at or above it, it waits for a finance approver.
+ * Request a full refund. Every refund waits for a finance approver; once
+ * approved it is PENDING and `processRefund` sends it to the processor.
  */
 export const requestRefund = defineAction({
   name: "refunds.refund.request",
@@ -37,13 +36,12 @@ export const requestRefund = defineAction({
       throw new RefundStateError(`Transaction ${txn.reference} is already refunded or has a refund in progress`);
     }
 
-    const gated = needsApproval(txn.amountCents);
     const refund = await ctx.tx.refundRequest.create({
       data: {
         transactionId: txn.id,
         amountCents: txn.amountCents,
         reasonCode: input.reasonCode,
-        status: gated ? "PENDING_APPROVAL" : "PENDING",
+        status: "PENDING_APPROVAL",
         idempotencyKey: randomUUID(),
         requestedById: ctx.actor.id,
       },
@@ -61,17 +59,15 @@ export const requestRefund = defineAction({
       },
     });
 
-    if (gated) {
-      await requestApproval(ctx, {
-        app: "refunds",
-        action: EXECUTE_APPROVAL_ACTION,
-        payload: { refundId: refund.id },
-        summary: `Refund ${formatCents(txn.amountCents, txn.currency)} on ${txn.reference} (${REASON_CODES[input.reasonCode]})`,
-        approverPermission: "refunds.approve",
-        entityType: "RefundRequest",
-        entityId: refund.id,
-      });
-    }
+    await requestApproval(ctx, {
+      app: "refunds",
+      action: EXECUTE_APPROVAL_ACTION,
+      payload: { refundId: refund.id },
+      summary: `Refund ${formatCents(txn.amountCents, txn.currency)} on ${txn.reference} (${REASON_CODES[input.reasonCode]})`,
+      approverPermission: "refunds.approve",
+      entityType: "RefundRequest",
+      entityId: refund.id,
+    });
     return refund;
   },
 });

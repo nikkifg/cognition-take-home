@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Prisma } from "@/generated/prisma/client";
-import { REASON_CODES, TXN_SETTLED, formatCents, needsApproval } from "@/apps/refunds/policy";
+import { REASON_CODES, TXN_SETTLED, formatCents } from "@/apps/refunds/policy";
 import { Masked } from "@/platform/masked";
 import { can } from "@/platform/rbac";
 import { requireUser } from "@/platform/session";
@@ -107,7 +107,6 @@ async function Transactions({ searchParams }: { searchParams: PageProps<"/refund
                         transactionId={t.id}
                         reference={t.reference}
                         amount={amount}
-                        needsApproval={needsApproval(t.amountCents)}
                         refundable={t.status === TXN_SETTLED}
                       />
                     )}
