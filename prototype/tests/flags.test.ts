@@ -180,6 +180,21 @@ describe("Flags: prod changes need approval", () => {
     assert.equal(next.status, "PENDING");
   });
 
+  it("credits the request being approved even if another approved request is unapplied", async () => {
+    const { flag, request } = await requested();
+    const { id: _id, createdAt: _c, ...rest } = await db.approvalRequest.findUniqueOrThrow({ where: { id: request.id } });
+    const stray = await db.approvalRequest.create({
+      data: { ...rest, requestedById: engineer2.id, status: "APPROVED", resolvedAt: new Date(Date.now() + 60_000) },
+    });
+
+    await runAction(decideApproval, engineer2, { requestId: request.id, decision: "APPROVE" });
+
+    const [change] = await changesFor(flag.id);
+    assert.equal(change.approvalRequestId, request.id);
+    assert.equal(change.changedById, engineer.id);
+    assert.equal((await db.flagChange.count({ where: { approvalRequestId: stray.id } })), 0);
+  });
+
   it("a rejection leaves prod unchanged and frees the flag for a new request", async () => {
     const { flag, value, request } = await requested();
 

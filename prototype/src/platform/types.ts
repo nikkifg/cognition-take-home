@@ -25,7 +25,11 @@ export type ActionContext = {
   audit: (event: AuditInput) => Promise<void>;
 };
 
-export type ApprovalHandler = (ctx: ActionContext, payload: unknown) => Promise<void>;
+export type ApprovalHandler = (
+  ctx: ActionContext,
+  payload: unknown,
+  request: { id: string; requestedById: string },
+) => Promise<void>;
 
 export type SensitiveField = {
   label: string;

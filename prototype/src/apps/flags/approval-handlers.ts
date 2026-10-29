@@ -3,9 +3,13 @@
 import { SelfApprovalError } from "@/platform/errors";
 import type { ActionContext } from "@/platform/types";
 import { FlagStateError } from "./errors";
-import { PROD_CHANGE, valueSnapshot, type ProdChangePayload } from "./policy";
+import { valueSnapshot, type ProdChangePayload } from "./policy";
 
-export async function applyProdChange(ctx: ActionContext, payload: unknown) {
+export async function applyProdChange(
+  ctx: ActionContext,
+  payload: unknown,
+  request: { id: string; requestedById: string },
+) {
   const p = payload as ProdChangePayload;
   const { tx, actor } = ctx;
   const before = await tx.flagValue.findUnique({ where: { id: p.valueId } });
@@ -13,13 +17,6 @@ export async function applyProdChange(ctx: ActionContext, payload: unknown) {
   if (before.enabled !== p.fromEnabled) {
     throw new FlagStateError("The prod value changed since this request; reject it and request again");
   }
-  // decideApproval marks the request APPROVED before calling the handler; this
-  // is the approved request for this value that hasn't been applied yet.
-  const request = await tx.approvalRequest.findFirst({
-    where: { app: "flags", action: PROD_CHANGE, entityId: before.id, status: "APPROVED", flagChanges: { none: {} } },
-    orderBy: { resolvedAt: "desc" },
-  });
-  if (!request) throw new FlagStateError("Approved request not found");
   if (request.requestedById === actor.id) throw new SelfApprovalError();
 
   const { count } = await tx.flagValue.updateMany({
