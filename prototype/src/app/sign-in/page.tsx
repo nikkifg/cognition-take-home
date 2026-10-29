@@ -50,7 +50,9 @@ async function SignInError({ searchParams }: { searchParams: PageProps<"/sign-in
   return (
     <Alert variant="destructive" className="mb-4">
       <AlertTitle>Sign-in failed</AlertTitle>
-      <AlertDescription>{ERROR_MESSAGES[code] ?? `Something went wrong (${code}). Try again.`}</AlertDescription>
+      <AlertDescription>{Object.hasOwn(ERROR_MESSAGES, code)
+          ? ERROR_MESSAGES[code]
+          : `Something went wrong (${code}). Try again.`}</AlertDescription>
     </Alert>
   );
 }
