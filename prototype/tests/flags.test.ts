@@ -182,9 +182,14 @@ describe("Flags: prod changes need approval", () => {
 
   it("credits the request being approved even if another approved request is unapplied", async () => {
     const { flag, request } = await requested();
-    const { id: _id, createdAt: _c, ...rest } = await db.approvalRequest.findUniqueOrThrow({ where: { id: request.id } });
+    const { app, action, payload, summary, entityType, entityId, approverPermission } = request;
     const stray = await db.approvalRequest.create({
-      data: { ...rest, requestedById: engineer2.id, status: "APPROVED", resolvedAt: new Date(Date.now() + 60_000) },
+      data: {
+        app, action, payload, summary, entityType, entityId, approverPermission,
+        requestedById: engineer2.id,
+        status: "APPROVED",
+        resolvedAt: new Date(Date.now() + 60_000),
+      },
     });
 
     await runAction(decideApproval, engineer2, { requestId: request.id, decision: "APPROVE" });
