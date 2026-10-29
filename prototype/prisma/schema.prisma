@@ -1,7 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// Prisma schema for the internal tools portal.
+// Platform models first, then one section per app. All writes go through
+// platform actions (src/platform/actions.ts); see AGENTS.md.
 
 generator client {
   provider = "prisma-client"
@@ -12,11 +11,253 @@ datasource db {
   provider = "sqlite"
 }
 
-// Starter model to verify DB wiring; replace with real app models.
+// ───────────────────────────── Platform ─────────────────────────────
+
+enum Role {
+  compliance_analyst
+  compliance_senior_reviewer
+  support_agent
+  finance_approver
+  engineer
+  admin
+}
+
+/// Mirrors a Microsoft Entra ID user. `oid`/`tenantId` mimic Entra token claims.
+model User {
+  id          String   @id
+  oid         String   @unique
+  tenantId    String
+  email       String   @unique
+  displayName String
+  role        Role
+  createdAt   DateTime @default(now())
+
+  claimedCases       KycCase[]          @relation("CaseClaimedBy")
+  decidedCases       KycCase[]          @relation("CaseDecidedBy")
+  refundRequests     RefundRequest[]    @relation("RefundRequestedBy")
+  approvalRequests   ApprovalRequest[]  @relation("ApprovalRequestedBy")
+  approvalDecisions  ApprovalDecision[]
+  flagValueUpdates   FlagValue[]
+  flagChanges        FlagChange[]
+}
+
+/// Append-only. Insert via platform/audit.ts only; UPDATE/DELETE are blocked by
+/// database triggers (see migration `platform_layer`).
 model AuditEvent {
-  id        Int      @id @default(autoincrement())
-  actor     String
-  action    String
-  entity    String
-  createdAt DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  createdAt  DateTime @default(now())
+  actorId    String
+  actorEmail String
+  actorRole  String
+  action     String
+  app        String
+  entityType String?
+  entityId   String?
+  before     String? // JSON snapshot
+  after      String? // JSON snapshot
+  reason     String?
+
+  @@index([createdAt])
+  @@index([entityType, entityId])
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// A change that needs sign-off before it is applied (maker-checker).
+model ApprovalRequest {
+  id                 String         @id @default(cuid())
+  app                String
+  action             String // handler key registered in apps.config.ts
+  payload            String // JSON input for the handler
+  summary            String
+  entityType         String?
+  entityId           String?
+  approverPermission String
+  requiredApprovals  Int            @default(1)
+  status             ApprovalStatus @default(PENDING)
+  requestedById      String
+  requestedBy        User           @relation("ApprovalRequestedBy", fields: [requestedById], references: [id])
+  createdAt          DateTime       @default(now())
+  resolvedAt         DateTime?
+
+  decisions   ApprovalDecision[]
+  flagChanges FlagChange[]
+
+  @@index([status])
+}
+
+enum ApprovalDecisionType {
+  APPROVE
+  REJECT
+}
+
+model ApprovalDecision {
+  id         String               @id @default(cuid())
+  requestId  String
+  request    ApprovalRequest      @relation(fields: [requestId], references: [id])
+  approverId String
+  approver   User                 @relation(fields: [approverId], references: [id])
+  decision   ApprovalDecisionType
+  comment    String?
+  createdAt  DateTime             @default(now())
+
+  @@unique([requestId, approverId])
+}
+
+// ─────────────────────────────── KYC ────────────────────────────────
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+/// Synthetic applicants only. `ssn` uses the never-issued 000 area number.
+model KycApplicant {
+  id          String    @id @default(cuid())
+  displayName String
+  country     String
+  riskLevel   RiskLevel
+  ssn         String // sensitive: render with <Masked>
+  createdAt   DateTime  @default(now())
+
+  cases    KycCase[]
+  idChecks IdCheck[]
+}
+
+enum KycCaseStatus {
+  OPEN
+  IN_REVIEW
+  PENDING_SECOND_REVIEW
+  ESCALATED
+  APPROVED
+  REJECTED
+}
+
+model KycCase {
+  id             String        @id @default(cuid())
+  reference      String        @unique
+  applicantId    String
+  applicant      KycApplicant  @relation(fields: [applicantId], references: [id])
+  status         KycCaseStatus @default(OPEN)
+  claimedById    String?
+  claimedBy      User?         @relation("CaseClaimedBy", fields: [claimedById], references: [id])
+  claimedAt      DateTime?
+  decisionReason String?
+  decidedById    String?
+  decidedBy      User?         @relation("CaseDecidedBy", fields: [decidedById], references: [id])
+  decidedAt      DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([status])
+}
+
+enum IdCheckResult {
+  PASS
+  FAIL
+  NEEDS_REVIEW
+}
+
+/// Results from a mock identity-verification vendor.
+model IdCheck {
+  id           String        @id @default(cuid())
+  applicantId  String
+  applicant    KycApplicant  @relation(fields: [applicantId], references: [id])
+  provider     String
+  documentType String
+  result       IdCheckResult
+  matchScore   Int // 0-100
+  checkedAt    DateTime
+}
+
+// ───────────────────────────── Refunds ──────────────────────────────
+
+model Transaction {
+  id          String   @id @default(cuid())
+  reference   String   @unique
+  customerRef String
+  amountCents Int
+  currency    String   @default("USD")
+  status      String   @default("SETTLED")
+  createdAt   DateTime
+
+  refundRequests RefundRequest[]
+}
+
+enum RefundStatus {
+  REQUESTED
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  PROCESSED
+  FAILED
+}
+
+model RefundRequest {
+  id             String       @id @default(cuid())
+  transactionId  String
+  transaction    Transaction  @relation(fields: [transactionId], references: [id])
+  amountCents    Int
+  reason         String
+  status         RefundStatus @default(REQUESTED)
+  idempotencyKey String       @unique
+  processorRef   String?
+  requestedById  String
+  requestedBy    User         @relation("RefundRequestedBy", fields: [requestedById], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([status])
+}
+
+// ────────────────────────────── Flags ───────────────────────────────
+
+enum Environment {
+  dev
+  staging
+  prod
+}
+
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  description String
+  createdAt   DateTime @default(now())
+
+  values  FlagValue[]
+  changes FlagChange[]
+}
+
+model FlagValue {
+  id          String      @id @default(cuid())
+  flagId      String
+  flag        FeatureFlag @relation(fields: [flagId], references: [id])
+  environment Environment
+  enabled     Boolean     @default(false)
+  updatedById String?
+  updatedBy   User?       @relation(fields: [updatedById], references: [id])
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([flagId, environment])
+}
+
+/// Change history for flag values. Prod changes link to their approval.
+model FlagChange {
+  id                String           @id @default(cuid())
+  flagId            String
+  flag              FeatureFlag      @relation(fields: [flagId], references: [id])
+  environment       Environment
+  fromEnabled       Boolean
+  toEnabled         Boolean
+  reason            String?
+  changedById       String
+  changedBy         User             @relation(fields: [changedById], references: [id])
+  approvalRequestId String?
+  approvalRequest   ApprovalRequest? @relation(fields: [approvalRequestId], references: [id])
+  createdAt         DateTime         @default(now())
 }

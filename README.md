@@ -23,7 +23,12 @@ nvm use                      # Node 22 (see .nvmrc)
 cp .env.example .env
 npm install
 npm run db:migrate           # creates ./dev.db and applies migrations
+npm run db:seed              # synthetic personas and app data
 npm run dev                  # runs `prisma generate`, then http://localhost:3000
 ```
 
-Checks: `npm run lint`, `npm run typecheck`, `npm run build`.
+Sign in at `/sign-in` by picking a persona (mock Microsoft Entra ID). The audit log is at `/admin/audit`.
+
+Checks: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`.
+
+Rules for building on the platform (actions, permissions, approvals, `<Masked>`, app registry) are in [AGENTS.md](./AGENTS.md); review checks are in [REVIEW.md](./REVIEW.md).
