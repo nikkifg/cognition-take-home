@@ -14,7 +14,7 @@ import { ClaimButton } from "./_components/case-forms";
 
 const VIEWS = {
   active: { label: "Active", where: () => ({ status: { in: ["OPEN", "IN_REVIEW", "PENDING_SECOND_REVIEW", "ESCALATED"] } }) },
-  mine: { label: "Claimed by me", where: (u: Actor) => ({ claimedById: u.id, status: "IN_REVIEW" }) },
+  mine: { label: "Claimed by me", where: (u: Actor) => ({ claimedById: u.id, status: { in: ["IN_REVIEW", "PENDING_SECOND_REVIEW"] } }) },
   second: { label: "Awaiting second review", where: () => ({ status: "PENDING_SECOND_REVIEW" }) },
   escalated: { label: "Escalated", where: () => ({ status: "ESCALATED" }) },
   closed: { label: "Closed", where: () => ({ status: { in: ["APPROVED", "REJECTED"] } }) },
