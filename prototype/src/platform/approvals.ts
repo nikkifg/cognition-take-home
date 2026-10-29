@@ -102,9 +102,9 @@ export const decideApproval = defineAction({
     if (status === "APPROVED") {
       const handler = getApp(request.app)?.approvalHandlers?.[request.action];
       if (!handler) throw new Error(`No approval handler "${request.action}" for "${request.app}"`);
-      await handler(ctx, JSON.parse(request.payload));
+      await handler(ctx, JSON.parse(request.payload), request);
     } else if (status === "REJECTED") {
-      await getApp(request.app)?.rejectionHandlers?.[request.action]?.(ctx, JSON.parse(request.payload));
+      await getApp(request.app)?.rejectionHandlers?.[request.action]?.(ctx, JSON.parse(request.payload), request);
     }
     return { status, approvals };
   },

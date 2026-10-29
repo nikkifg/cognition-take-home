@@ -200,22 +200,81 @@ async function seedFlags() {
     for (const environment of envs) {
       const enabled = f.on.includes(environment);
       const changedBy = byId(i % 2 ? "engineer2" : "engineer1");
-      await db.flagValue.create({ data: { flagId: flag.id, environment, enabled, updatedById: enabled ? changedBy : null } });
+      const value = await db.flagValue.create({
+        data: { flagId: flag.id, environment, enabled, updatedById: enabled ? changedBy : null },
+      });
       if (enabled) {
+        const createdAt = daysAgo(30 - i - envs.indexOf(environment));
+        const reason = `Enable in ${environment}`;
+        // Prod changes were approved by the other engineer (four-eyes).
+        const approval =
+          environment === "prod"
+            ? await seedApproval(value.id, changedBy, otherEngineer(changedBy), {
+                flagId: flag.id,
+                key: f.key,
+                fromEnabled: false,
+                toEnabled: true,
+                reason,
+                createdAt,
+              })
+            : null;
         await db.flagChange.create({
           data: {
             flagId: flag.id,
             environment,
             fromEnabled: false,
             toEnabled: true,
-            reason: `Enable in ${environment}`,
+            reason,
             changedById: changedBy,
-            createdAt: daysAgo(30 - i - envs.indexOf(environment)),
+            approvalRequestId: approval?.id,
+            createdAt,
           },
         });
       }
     }
   }
+
+  // One pending prod request so approvers have something to review.
+  const pendingFlag = await db.featureFlag.findUniqueOrThrow({
+    where: { key: "instant-payouts" },
+    include: { values: { where: { environment: "prod" } } },
+  });
+  await seedApproval(pendingFlag.values[0].id, byId("engineer2"), null, {
+    flagId: pendingFlag.id,
+    key: pendingFlag.key,
+    fromEnabled: false,
+    toEnabled: true,
+    reason: "Staging soak complete; ready for prod",
+    createdAt: daysAgo(1),
+  });
+}
+
+const otherEngineer = (id: string) => byId(id === "engineer1" ? "engineer2" : "engineer1");
+
+/** A prod flag-change approval request; approved by `approver`, or pending if null. */
+async function seedApproval(
+  valueId: string,
+  requestedById: string,
+  approver: string | null,
+  c: { flagId: string; key: string; fromEnabled: boolean; toEnabled: boolean; reason: string; createdAt: Date },
+) {
+  const payload = { valueId, flagId: c.flagId, key: c.key, fromEnabled: c.fromEnabled, toEnabled: c.toEnabled, reason: c.reason };
+  return db.approvalRequest.create({
+    data: {
+      app: "flags",
+      action: "flags.prod.apply",
+      payload: JSON.stringify(payload),
+      summary: `Turn ${c.key} ${c.toEnabled ? "on" : "off"} in prod: ${c.reason}`,
+      entityType: "FlagValue",
+      entityId: valueId,
+      approverPermission: "flags.approve_prod",
+      status: approver ? "APPROVED" : "PENDING",
+      requestedById,
+      createdAt: c.createdAt,
+      resolvedAt: approver ? c.createdAt : null,
+      decisions: approver ? { create: { approverId: approver, decision: "APPROVE", createdAt: c.createdAt } } : undefined,
+    },
+  });
 }
 
 async function main() {

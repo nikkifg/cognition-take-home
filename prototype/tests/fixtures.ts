@@ -26,7 +26,13 @@ export async function makeFlag(key: string) {
     data: {
       key: `${key}-${Date.now()}-${++n}`,
       description: "test flag",
-      values: { create: [{ environment: "dev", enabled: false }, { environment: "prod", enabled: false }] },
+      values: {
+        create: [
+          { environment: "dev", enabled: false },
+          { environment: "staging", enabled: false },
+          { environment: "prod", enabled: false },
+        ],
+      },
     },
     include: { values: true },
   });
