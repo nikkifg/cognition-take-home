@@ -29,7 +29,7 @@ async function Queue({ searchParams }: { searchParams: Promise<{ view?: string }
     return <p className="text-sm text-destructive">403: you need the kyc.view permission to see the KYC queue.</p>;
   }
   const param = (await searchParams).view;
-  const view: View = param && param in VIEWS ? (param as View) : "active";
+  const view: View = param && Object.hasOwn(VIEWS, param) ? (param as View) : "active";
   const cases = await db.kycCase.findMany({
     where: VIEWS[view].where(user),
     include: { applicant: true, claimedBy: true },
