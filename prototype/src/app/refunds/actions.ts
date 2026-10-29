@@ -27,7 +27,7 @@ async function handle(fn: () => Promise<string>): Promise<FormResult> {
 function outcome(status: keyof typeof STATUS_LABELS, failureReason?: string | null) {
   if (status === "SUCCEEDED") return "Refund succeeded.";
   if (status === "FAILED") return `Refund failed: ${failureReason ?? "declined by processor"}.`;
-  if (status === "PENDING_APPROVAL") return "Sent to a finance approver for approval.";
+  if (status === "PENDING_APPROVAL") return "Sent for approval by another finance admin.";
   return `Refund is ${STATUS_LABELS[status].toLowerCase()}.`;
 }
 

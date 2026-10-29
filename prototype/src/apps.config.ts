@@ -48,30 +48,30 @@ const apps: AppDefinition[] = [
   {
     id: "refunds",
     name: "Refunds dashboard",
-    description: "Search transactions and request refunds; a finance approver signs off on each.",
+    description: "Search transactions and refund them; a second finance admin approves each refund.",
     href: "/refunds",
     status: "live",
     viewPermission: "refunds.view",
     permissions: {
       "refunds.view": {
         description: "View transactions and refunds",
-        roles: ["support_agent", "finance_approver", "admin"],
+        roles: ["finance_admin", "admin"],
       },
       "refunds.request": {
-        description: "Request a full refund (needs a finance approver)",
-        roles: ["support_agent", "finance_approver"],
+        description: "Request a full refund (another finance admin must approve it)",
+        roles: ["finance_admin"],
       },
       "refunds.execute": {
         description: "Send an authorized refund to the payment processor (incl. retries)",
-        roles: ["support_agent", "finance_approver"],
+        roles: ["finance_admin"],
       },
       "refunds.approve": {
         description: "Approve or reject refund requests",
-        roles: ["finance_approver"],
+        roles: ["finance_admin"],
       },
       "refunds.customer_email.reveal": {
         description: "Reveal a customer's full email address",
-        roles: ["support_agent", "finance_approver"],
+        roles: ["finance_admin"],
       },
     },
     sensitiveFields: {

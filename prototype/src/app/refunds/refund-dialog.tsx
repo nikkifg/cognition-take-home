@@ -49,7 +49,7 @@ export function RefundDialog({
             Refund {amount} on {reference}
           </DialogTitle>
           <DialogDescription>
-            Full refund only. A finance approver must approve it before it is sent to the processor.
+            Full refund only. Another finance admin must approve it before it is sent to the processor.
           </DialogDescription>
         </DialogHeader>
         {state && (

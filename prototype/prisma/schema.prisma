@@ -16,8 +16,7 @@ datasource db {
 enum Role {
   compliance_analyst
   compliance_senior_reviewer
-  support_agent
-  finance_approver
+  finance_admin
   engineer
   admin
 }

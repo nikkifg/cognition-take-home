@@ -21,7 +21,7 @@ export default function RefundsLayout({ children }: LayoutProps<"/refunds">) {
       <div>
         <h1 className="text-2xl font-semibold">Refunds dashboard</h1>
         <p className="text-sm text-muted-foreground">
-          Full refunds only. Every refund needs a finance approver.
+          Full refunds only. Every refund needs approval from a second finance admin.
         </p>
       </div>
       <Suspense fallback={null}>

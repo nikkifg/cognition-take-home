@@ -36,7 +36,7 @@ async function Approvals() {
   return (
     <>
       <p className="text-sm text-muted-foreground">
-        {pending.length} pending. You can’t approve a request you made; another finance approver must.
+        {pending.length} pending. You can’t approve a request you made; another finance admin must.
       </p>
       <div className="rounded-lg border bg-card">
         <Table>

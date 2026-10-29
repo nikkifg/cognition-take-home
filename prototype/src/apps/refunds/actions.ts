@@ -15,7 +15,7 @@ import {
 import { getPaymentProcessor } from "./processor";
 
 /**
- * Request a full refund. Every refund waits for a finance approver; once
+ * Request a full refund. Every refund waits for another finance admin to approve it; once
  * approved it is PENDING and `processRefund` sends it to the processor.
  */
 export const requestRefund = defineAction({

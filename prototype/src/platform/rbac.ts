@@ -11,7 +11,7 @@ export const PLATFORM_PERMISSIONS: Record<Permission, { description: string; rol
   },
   "approvals.decide": {
     description: "Decide approval requests (the request's own permission is also required)",
-    roles: ["compliance_senior_reviewer", "finance_approver", "engineer"],
+    roles: ["compliance_senior_reviewer", "finance_admin", "engineer"],
   },
 };
 

@@ -127,12 +127,12 @@ async function seedRefunds() {
     approval?: { status: ApprovalStatus; by?: string };
   };
   const requests: Seeded[] = [
-    { txn: 0, status: "SUCCEEDED", by: "support.agent", reasonCode: "DUPLICATE_CHARGE", approval: { status: "APPROVED", by: "finance.approver1" } },
-    { txn: 3, status: "PENDING_APPROVAL", by: "support.agent", reasonCode: "CUSTOMER_REQUEST", approval: { status: "PENDING" } },
-    { txn: 5, status: "REJECTED", by: "support.agent", reasonCode: "OTHER", approval: { status: "REJECTED", by: "finance.approver1" } },
-    { txn: 7, status: "SUCCEEDED", by: "finance.approver1", reasonCode: "FRAUD", approval: { status: "APPROVED", by: "finance.approver2" } },
-    { txn: 8, status: "FAILED", by: "support.agent", reasonCode: "CUSTOMER_REQUEST", approval: { status: "APPROVED", by: "finance.approver2" } },
-    { txn: 10, status: "PENDING_APPROVAL", by: "finance.approver1", reasonCode: "DUPLICATE_CHARGE", approval: { status: "PENDING" } },
+    { txn: 0, status: "SUCCEEDED", by: "finance.admin2", reasonCode: "DUPLICATE_CHARGE", approval: { status: "APPROVED", by: "finance.admin1" } },
+    { txn: 3, status: "PENDING_APPROVAL", by: "finance.admin2", reasonCode: "CUSTOMER_REQUEST", approval: { status: "PENDING" } },
+    { txn: 5, status: "REJECTED", by: "finance.admin2", reasonCode: "OTHER", approval: { status: "REJECTED", by: "finance.admin1" } },
+    { txn: 7, status: "SUCCEEDED", by: "finance.admin1", reasonCode: "FRAUD", approval: { status: "APPROVED", by: "finance.admin2" } },
+    { txn: 8, status: "FAILED", by: "finance.admin1", reasonCode: "CUSTOMER_REQUEST", approval: { status: "APPROVED", by: "finance.admin2" } },
+    { txn: 10, status: "PENDING_APPROVAL", by: "finance.admin1", reasonCode: "DUPLICATE_CHARGE", approval: { status: "PENDING" } },
   ];
   const txnStatus: Partial<Record<RefundStatus, string>> = {
     SUCCEEDED: "REFUNDED",

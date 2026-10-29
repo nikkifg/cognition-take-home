@@ -6,8 +6,7 @@ export type { Role };
 export const ROLES: readonly Role[] = [
   "compliance_analyst",
   "compliance_senior_reviewer",
-  "support_agent",
-  "finance_approver",
+  "finance_admin",
   "engineer",
   "admin",
 ];
@@ -15,8 +14,7 @@ export const ROLES: readonly Role[] = [
 export const ROLE_LABELS: Record<Role, string> = {
   compliance_analyst: "Compliance analyst",
   compliance_senior_reviewer: "Senior compliance reviewer",
-  support_agent: "Support agent",
-  finance_approver: "Finance approver",
+  finance_admin: "Finance admin",
   engineer: "Engineer",
   admin: "Admin",
 };

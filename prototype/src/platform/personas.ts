@@ -23,9 +23,8 @@ const persona = (n: number, id: string, displayName: string, role: Role): Person
 export const PERSONAS: Persona[] = [
   persona(1, "compliance.analyst", "Compliance Analyst (Test)", "compliance_analyst"),
   persona(2, "compliance.senior", "Senior Compliance Reviewer (Test)", "compliance_senior_reviewer"),
-  persona(3, "support.agent", "Support Agent (Test)", "support_agent"),
-  persona(4, "finance.approver1", "Finance Approver 1 (Test)", "finance_approver"),
-  persona(5, "finance.approver2", "Finance Approver 2 (Test)", "finance_approver"),
+  persona(4, "finance.admin1", "Finance Admin 1 (Test)", "finance_admin"),
+  persona(5, "finance.admin2", "Finance Admin 2 (Test)", "finance_admin"),
   persona(6, "engineer1", "Engineer 1 (Test)", "engineer"),
   persona(7, "engineer2", "Engineer 2 (Test)", "engineer"),
   persona(8, "platform.admin", "Platform Admin (Test)", "admin"),
