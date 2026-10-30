@@ -57,10 +57,7 @@ Rules for every Devin (or other agent) session in this repo. The app lives in
 ```bash
 cd prototype
 nvm use                # Node 22
-cp .env.example .env
-npm install
-npm run db:migrate     # applies migrations to ./dev.db
-npm run db:seed        # synthetic personas and app data
+npm run setup          # install, .env, Prisma client, ./dev.db + seed data
 npm run dev            # http://localhost:3000, sign in at /sign-in
 npm test               # guardrail tests against a throwaway test.db
 ```
