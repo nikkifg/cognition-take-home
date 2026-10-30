@@ -10,7 +10,7 @@
     "typecheck": "prisma generate && next typegen && tsc --noEmit",
     "test": "prisma generate && node --import tsx --import ./tests/setup.ts --test --test-concurrency=1 \"tests/**/*.test.ts\"",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "prisma db seed",
+    "db:seed": "prisma generate && prisma db seed",
     "db:generate": "prisma generate"
   },
   "dependencies": {
