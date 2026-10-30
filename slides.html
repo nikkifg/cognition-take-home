@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Replacing Power Apps: An Internal Platform Built with Devin</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --fg: #e6e8ee;
+    --muted: #9aa3b5;
+    --accent: #818cf8;
+    --card: #181b24;
+    --line: #2a2f3d;
+    --placeholder: #fbbf24;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--fg); overflow: hidden; }
+  body { font: 400 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+
+  #viewport { position: fixed; inset: 0; display: grid; place-items: center; }
+  #stage { position: relative; width: 1280px; height: 720px; transform-origin: center; }
+
+  .slide {
+    position: absolute; inset: 0; padding: 80px 104px;
+    display: none; flex-direction: column; justify-content: center; gap: 28px;
+  }
+  .slide.active { display: flex; }
+
+  .kicker { color: var(--accent); font-size: 18px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+  h1 { font-size: 64px; line-height: 1.1; font-weight: 700; letter-spacing: -.02em; }
+  h2 { font-size: 48px; line-height: 1.15; font-weight: 700; letter-spacing: -.015em; }
+  h3 { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+  p, li { font-size: 26px; color: var(--fg); }
+  .lead { font-size: 30px; color: var(--muted); max-width: 1000px; }
+  .muted { color: var(--muted); }
+  strong { color: #fff; font-weight: 600; }
+  em { color: var(--accent); font-style: normal; }
+
+  ul.points { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+  ul.points li { padding-left: 32px; position: relative; }
+  ul.points li::before { content: ""; position: absolute; left: 0; top: .6em; width: 12px; height: 2px; background: var(--accent); }
+
+  .cols { display: grid; gap: 24px; }
+  .cols.c2 { grid-template-columns: 1fr 1fr; }
+  .cols.c3 { grid-template-columns: 1fr 1fr 1fr; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 28px; }
+  .card p { font-size: 21px; color: var(--muted); }
+  .card .num { color: var(--accent); font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+
+  ol.steps { list-style: none; counter-reset: step; display: flex; flex-direction: column; gap: 12px; }
+  ol.steps li { counter-increment: step; position: relative; padding-left: 54px; font-size: 24px; }
+  ol.steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 0; width: 36px; height: 36px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 17px; font-weight: 700;
+    background: var(--accent); color: var(--bg);
+  }
+  code { font: 500 .9em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--accent); }
+  .takeaway { border-left: 3px solid var(--accent); padding: 4px 0 4px 22px; font-size: 24px; color: var(--muted); }
+  .ph { color: var(--placeholder); font-weight: 700; }
+  .demo-tag { display: inline-block; align-self: flex-start; padding: 4px 12px; border: 1px solid var(--accent); border-radius: 999px; color: var(--accent); font-size: 15px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+
+  .title-slide h1 { font-size: 76px; max-width: 1000px; }
+  .center { align-items: center; text-align: center; }
+
+  #progress { position: fixed; left: 0; bottom: 0; height: 3px; background: var(--accent); transition: width .2s ease; }
+  #counter { position: fixed; right: 24px; bottom: 16px; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+  #hint { position: fixed; left: 24px; bottom: 16px; color: var(--muted); font-size: 13px; opacity: .6; }
+
+  @media print {
+    html, body { overflow: visible; height: auto; }
+    #viewport { position: static; display: block; }
+    #stage { transform: none !important; width: 1280px; height: auto; }
+    .slide { position: relative; display: flex; height: 720px; page-break-after: always; }
+    #progress, #counter, #hint { display: none; }
+  }
+  @page { size: 1280px 720px; margin: 0; }
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage">
+
+  <!-- 1 -->
+  <section class="slide title-slide">
+    <div class="kicker">Build vs. buy</div>
+    <h1>Replacing Power Apps: An Internal Platform Built with Devin</h1>
+  </section>
+
+  <!-- 2 -->
+  <section class="slide">
+    <div class="kicker">The pitch</div>
+    <h2>Build one governed internal platform with Devin. Every internal app sits on top.</h2>
+    <p class="lead">Power Apps' real value is the foundation underneath: Microsoft sign-in, roles, approval flows, audit trails, compliance.</p>
+    <p class="takeaway">The question isn't whether we can build apps. It's whether we can replace that foundation.</p>
+  </section>
+
+  <!-- 3 -->
+  <section class="slide">
+    <div class="kicker">Why build</div>
+    <h2>Three reasons</h2>
+    <div class="cols c3">
+      <div class="card">
+        <div class="num">01</div>
+        <h3>Tools work our way</h3>
+        <p>Tools work exactly the way the team wants, with no customization ceiling. Faster than model-driven Power Apps, which are generated from metadata at runtime.</p>
+      </div>
+      <div class="card">
+        <div class="num">02</div>
+        <h3>Shipping is fast</h3>
+        <p>Once the foundation exists, Devin does the building.</p>
+      </div>
+      <div class="card">
+        <div class="num">03</div>
+        <h3>Cost</h3>
+        <p>Power Apps charges per user, so the bill grows with hiring. An owned platform costs the same at 50 or 500 users.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide">
+    <span class="demo-tag">Demo 1 &middot; Approvals</span>
+    <h2>Nobody approves their own refund</h2>
+    <ol class="steps">
+      <li>Sign in as <strong>Finance Admin 1</strong> and request a refund.</li>
+      <li>Try to approve it: blocked, you can't approve your own request.</li>
+      <li>Switch to <strong>Finance Admin 2</strong> and approve.</li>
+      <li>The refund goes straight to the payment processor.</li>
+    </ol>
+    <p class="takeaway">The separation-of-duties rule lives in the foundation, so every future tool gets it automatically.</p>
+  </section>
+
+  <!-- 5 -->
+  <section class="slide">
+    <span class="demo-tag">Demo 2 &middot; Sensitive data</span>
+    <h2>SSNs are hidden by default</h2>
+    <ol class="steps">
+      <li>Open a KYC case: the SSN is masked.</li>
+      <li>As a <strong>senior compliance reviewer</strong>, reveal it.</li>
+      <li>Open <code>/admin/audit</code>: it records who looked and when, without storing the number.</li>
+      <li>Sign in as an <strong>analyst</strong>: no reveal at all.</li>
+    </ol>
+  </section>
+
+  <!-- 6 -->
+  <section class="slide">
+    <span class="demo-tag">Demo 3 &middot; Access</span>
+    <h2>Admins can see, not approve</h2>
+    <ol class="steps">
+      <li>Sign in as <strong>admin</strong> and open the KYC queue.</li>
+      <li>The queue is visible, but approving customers isn't allowed.</li>
+    </ol>
+    <p class="takeaway">Responsibilities stay separate, even for the most privileged role.</p>
+  </section>
+
+  <!-- 7 -->
+  <section class="slide">
+    <span class="demo-tag">Demo 4 &middot; A new tool</span>
+    <h2>A payouts tool from a few sentences</h2>
+    <ol class="steps">
+      <li>The <strong>brief</strong>: a few sentences asking for a tool to approve payout bank-account changes.</li>
+      <li>The <strong>PR</strong>: Devin built it following the platform's rules.</li>
+      <li>The <strong>running app</strong>: approvals, hidden account numbers and audit logging already work.</li>
+    </ol>
+    <p class="takeaway">Devin took <span class="ph">[X]</span> minutes. Review took <span class="ph">[Y]</span>.</p>
+  </section>
+
+  <!-- 8 -->
+  <section class="slide">
+    <div class="kicker">What it replaces</div>
+    <h2>The foundation, the apps, and how new ones get made</h2>
+    <div class="cols c2">
+      <ul class="points">
+        <li>Microsoft sign-in</li>
+        <li>Roles</li>
+        <li>Approvals</li>
+        <li>Hidden sensitive fields</li>
+        <li>Full audit trail</li>
+        <li>The apps themselves</li>
+        <li>New tools from a short description</li>
+      </ul>
+      <div class="card">
+        <h3>Beyond Power Apps</h3>
+        <ul class="points">
+          <li>Every change is tested and reviewed before shipping.</li>
+          <li>Tools connect directly to our own systems.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 -->
+  <section class="slide">
+    <div class="kicker">What it can't replace</div>
+    <h2>Two honest gaps</h2>
+    <div class="cols c2">
+      <div class="card">
+        <div class="num">01</div>
+        <h3>The ops team building tools themselves</h3>
+        <p>Now they describe what they need, Devin builds, an engineer approves. A real change in who does the work.</p>
+      </div>
+      <div class="card">
+        <div class="num">02</div>
+        <h3>Microsoft running everything</h3>
+        <p>Hosting, security updates and uptime become our responsibility.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide">
+    <div class="kicker">Risks</div>
+    <h2>What to plan for</h2>
+    <div class="cols c2">
+      <div class="card">
+        <h3>Greater maintenance</h3>
+        <p>AI makes building software cheaper, not owning it. Most of a tool's cost is updates, bug fixes and security patches, so budget for it from day one.</p>
+      </div>
+      <div class="card">
+        <h3>Compliance</h3>
+        <p>Move regulated workflows last, once the foundation proves secure.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 -->
+  <section class="slide">
+    <div class="kicker">Proposal</div>
+    <h2>A six-week pilot</h2>
+    <div class="cols c2">
+      <div class="card">
+        <h3>Build</h3>
+        <p>Build the platform and migrate one tool.</p>
+      </div>
+      <div class="card">
+        <h3>Evaluate</h3>
+        <p>How fast do changes get built? Is the foundation secure enough?</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 -->
+  <section class="slide center">
+    <h1>Questions?</h1>
+    <p class="lead">Thank you.</p>
+  </section>
+
+</div></div>
+
+<div id="progress"></div>
+<div id="counter"></div>
+<div id="hint">&larr; &rarr; to navigate &middot; F for fullscreen</div>
+
+<script>
+(() => {
+  const slides = [...document.querySelectorAll('.slide')];
+  const stage = document.getElementById('stage');
+  const progress = document.getElementById('progress');
+  const counter = document.getElementById('counter');
+  let i = 0;
+
+  const fromHash = () => {
+    const n = parseInt(location.hash.slice(1), 10);
+    return Number.isInteger(n) ? Math.min(Math.max(n - 1, 0), slides.length - 1) : 0;
+  };
+
+  const show = (n) => {
+    i = Math.min(Math.max(n, 0), slides.length - 1);
+    slides.forEach((s, k) => s.classList.toggle('active', k === i));
+    progress.style.width = ((i + 1) / slides.length * 100) + '%';
+    counter.textContent = (i + 1) + ' / ' + slides.length;
+    if (location.hash !== '#' + (i + 1)) history.replaceState(null, '', '#' + (i + 1));
+  };
+
+  const fit = () => {
+    const s = Math.min(innerWidth / 1280, innerHeight / 720);
+    stage.style.transform = 'scale(' + s + ')';
+  };
+
+  document.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    switch (e.key) {
+      case 'ArrowRight': case 'ArrowDown': case 'PageDown': case ' ': case 'Enter':
+        e.preventDefault(); show(i + 1); break;
+      case 'ArrowLeft': case 'ArrowUp': case 'PageUp': case 'Backspace':
+        e.preventDefault(); show(i - 1); break;
+      case 'Home': e.preventDefault(); show(0); break;
+      case 'End': e.preventDefault(); show(slides.length - 1); break;
+      case 'f': case 'F':
+        document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+        break;
+    }
+  });
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('a')) return;
+    show(e.clientX < innerWidth / 3 ? i - 1 : i + 1);
+  });
+  addEventListener('hashchange', () => show(fromHash()));
+  addEventListener('resize', fit);
+
+  fit();
+  show(fromHash());
+})();
+</script>
+</body>
+</html>

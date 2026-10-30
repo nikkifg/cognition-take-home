@@ -9,6 +9,8 @@ This repo will contain:
 
 See [instructions.md](./instructions.md) for the full assignment.
 
+Presentation: open [slides.html](./slides.html) in a browser (arrow keys to navigate, F for fullscreen).
+
 ## Stack
 
 Next.js 16 (App Router, TypeScript, Tailwind), Prisma 7 with SQLite (`better-sqlite3` driver adapter), Node 22.
